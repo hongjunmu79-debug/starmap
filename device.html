@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>设备预览</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #121316;
+      color: #e5e5e5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-x: hidden;
+      padding: 20px;
+    }
+    .device-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .device {
+      background: #1c1d22;
+      border: 2px solid #2a2c35;
+      border-radius: 32px;
+      padding: 24px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.15s ease;
+    }
+    /* 480x480 screen */
+    .screen {
+      width: 480px;
+      height: 480px;
+      background: #000000;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+    /* Top Bar (height 56) */
+    .top-bar {
+      height: 56px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      border-bottom: 1px solid #1a1a1f;
+    }
+    .top-left {
+      font-size: 17px;
+      font-weight: 600;
+      color: #e5e5e5;
+      letter-spacing: 0.2px;
+    }
+    .top-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .done-count {
+      font-size: 16px;
+      font-weight: 500;
+      color: #9ca3af;
+    }
+    .sync-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      transition: background-color 0.2s, box-shadow 0.2s;
+    }
+    .sync-gray {
+      background-color: #6b7280;
+    }
+    .sync-green {
+      background-color: #22c55e;
+      box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+    }
+    .sync-red {
+      background-color: #ef4444;
+      box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+    }
+    /* 4 rows container (height 368 = 4 * 92) */
+    .rows-container {
+      height: 368px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .row {
+      height: 92px;
+      box-sizing: border-box;
+      border-bottom: 1px solid #18191d;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .amber-bar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: #F2A33A;
+    }
+    .checkbox-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-right: 14px;
+      box-sizing: border-box;
+    }
+    .checkbox-tickable {
+      border: 2px solid #52545c;
+      background: transparent;
+      cursor: pointer;
+      transition: border-color 0.15s, background-color 0.15s;
+    }
+    .checkbox-tickable:hover {
+      border-color: #888a93;
+    }
+    .checkbox-untickable {
+      border: 2px dashed #3a3b42;
+      background: transparent;
+      cursor: default;
+    }
+    .text-content {
+      flex: 1;
+      min-width: 0;
+      padding-right: 56px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #f3f4f6;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.3;
+    }
+    .next-step {
+      font-size: 16px;
+      color: #888d96;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.3;
+      margin-top: 3px;
+    }
+    .tag-badge {
+      position: absolute;
+      right: 16px;
+      top: 14px;
+      font-size: 12px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .tag-overdue {
+      background: #F2A33A;
+      color: #000000;
+      font-weight: 600;
+    }
+    .tag-neutral {
+      background: #25262c;
+      color: #9ca3af;
+    }
+    /* Bottom bar (height 56) */
+    .bottom-bar {
+      height: 56px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #71757e;
+    }
+    /* Empty & error centered message */
+    .center-message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 18px;
+      color: #888d96;
+      text-align: center;
+      pointer-events: none;
+    }
+    /* Toast (undo bar) */
+    .toast {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #222329;
+      border: 1px solid #3c3e47;
+      border-radius: 20px;
+      padding: 6px 16px;
+      color: #e5e5e5;
+      font-size: 14px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      z-index: 50;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+      white-space: nowrap;
+    }
+    .undo-link {
+      color: #ffffff;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    /* LED panel */
+    .led-panel {
+      width: 480px;
+      margin-top: 22px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+    .led-unit {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .led-btn {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      cursor: pointer;
+      box-sizing: border-box;
+      transition: transform 0.08s ease, filter 0.08s ease, background-color 0.15s ease;
+    }
+    .led-btn:active {
+      transform: translateY(2px) scale(0.92);
+    }
+    .led-label {
+      font-size: 11px;
+      color: #888d96;
+      margin-top: 6px;
+      user-select: none;
+    }
+    /* LED styles */
+    .led-off {
+      background: #23252b;
+      border: 1px solid #33363e;
+      box-shadow: none;
+      opacity: 0.35;
+      cursor: default;
+    }
+    .led-dim-white {
+      background: #8b909a;
+      border: 1px solid #a4a9b4;
+      box-shadow: 0 0 5px rgba(255, 255, 255, 0.25);
+    }
+    .led-bright-white {
+      background: #ffffff;
+      border: 1px solid #ffffff;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.85);
+    }
+    .led-amber {
+      background: #F2A33A;
+      border: 1px solid #ffa83e;
+      box-shadow: 0 0 8px rgba(242, 163, 58, 0.65);
+    }
+    .led-dim-blue {
+      background: #28374a;
+      border: 1px solid #394d66;
+      box-shadow: none;
+      cursor: default;
+    }
+    .led-green {
+      background: #22c55e;
+      border: 1px solid #4ade80;
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.65);
+    }
+    .led-gray {
+      background: #6b7280;
+      border: 1px solid #7c828d;
+      box-shadow: none;
+    }
+    .led-red {
+      background: #ef4444;
+      border: 1px solid #f87171;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.65);
+    }
+    .led-flash-green {
+      background: #22c55e !important;
+      border-color: #4ade80 !important;
+      box-shadow: 0 0 14px #22c55e !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="device-wrapper">
+    <div class="device" id="device">
+      <!-- 480x480 Screen -->
+      <div class="screen" id="screen" data-rev="" data-page="0">
+        <!-- Top bar (56) -->
+        <div class="top-bar">
+          <div class="top-left" id="top-left">今天 --</div>
+          <div class="top-right">
+            <span class="done-count" id="done-count">✓ 0</span>
+            <span class="sync-dot sync-gray" id="sync-dot"></span>
+          </div>
+        </div>
+
+        <!-- 4 Rows container (368) -->
+        <div class="rows-container" id="rows-container"></div>
+
+        <!-- Center empty / error message -->
+        <div class="center-message" id="center-message" style="display: none;"></div>
+
+        <!-- Bottom bar (56) -->
+        <div class="bottom-bar" id="bottom-bar"></div>
+
+        <!-- Floating Undo toast -->
+        <div class="toast" id="toast">
+          已完成 · <span class="undo-link" id="undo-btn">撤销</span>
+        </div>
+      </div>
+
+      <!-- 6 LEDs row -->
+      <div class="led-panel">
+        <div class="led-unit">
+          <div class="led-btn led-off" data-led="1" id="led-1"></div>
+          <div class="led-label">1</div>
+        </div>
+        <div class="led-unit">
+          <div class="led-btn led-off" data-led="2" id="led-2"></div>
+          <div class="led-label">2</div>
+        </div>
+        <div class="led-unit">
+          <div class="led-btn led-off" data-led="3" id="led-3"></div>
+          <div class="led-label">3</div>
+        </div>
+        <div class="led-unit">
+          <div class="led-btn led-off" data-led="4" id="led-4"></div>
+          <div class="led-label">4</div>
+        </div>
+        <div class="led-unit">
+          <div class="led-btn led-off" data-led="5" id="led-5"></div>
+          <div class="led-label">翻页</div>
+        </div>
+        <div class="led-unit">
+          <div class="led-btn led-gray" data-led="6" id="led-6"></div>
+          <div class="led-label">同步</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      'use strict';
+
+      var state = {
+        data: null,
+        currentPage: 0,
+        syncStatus: 'gray', // 'gray' | 'green' | 'red'
+        lastTickedId: null,
+        toastTimer: null,
+        flashingLed: null
+      };
+
+      var screenElem = document.getElementById('screen');
+      var topLeftElem = document.getElementById('top-left');
+      var doneCountElem = document.getElementById('done-count');
+      var syncDotElem = document.getElementById('sync-dot');
+      var rowsContainer = document.getElementById('rows-container');
+      var bottomBarElem = document.getElementById('bottom-bar');
+      var centerMessageElem = document.getElementById('center-message');
+      var toastElem = document.getElementById('toast');
+      var undoBtn = document.getElementById('undo-btn');
+      var deviceElem = document.getElementById('device');
+
+      // Responsive scaling when window width < 560px
+      function updateScale() {
+        var w = window.innerWidth;
+        if (w < 560) {
+          var scale = Math.max(0.1, (w - 24) / 532);
+          deviceElem.style.transform = 'scale(' + scale + ')';
+          deviceElem.style.transformOrigin = 'center center';
+        } else {
+          deviceElem.style.transform = '';
+        }
+      }
+      window.addEventListener('resize', updateScale);
+      updateScale();
+
+      function setSyncStatus(status) {
+        state.syncStatus = status;
+        syncDotElem.className = 'sync-dot ' + (status === 'green' ? 'sync-green' : (status === 'red' ? 'sync-red' : 'sync-gray'));
+        var led6 = document.getElementById('led-6');
+        if (led6) {
+          led6.className = 'led-btn ' + (status === 'green' ? 'led-green' : (status === 'red' ? 'led-red' : 'led-gray'));
+        }
+      }
+
+      function showToast(id) {
+        state.lastTickedId = id;
+        toastElem.style.display = 'flex';
+        if (state.toastTimer) {
+          clearTimeout(state.toastTimer);
+        }
+        state.toastTimer = setTimeout(function() {
+          toastElem.style.display = 'none';
+          state.lastTickedId = null;
+          state.toastTimer = null;
+        }, 4000);
+      }
+
+      function hideToast() {
+        toastElem.style.display = 'none';
+        if (state.toastTimer) {
+          clearTimeout(state.toastTimer);
+          state.toastTimer = null;
+        }
+        state.lastTickedId = null;
+      }
+
+      undoBtn.addEventListener('click', function() {
+        if (!state.lastTickedId) return;
+        var idToUndo = state.lastTickedId;
+        hideToast();
+
+        fetch('/api/today-tick', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: idToUndo, done: false })
+        })
+        .then(function(res) {
+          if (!res.ok) throw new Error('Undo failed');
+          return res.json();
+        })
+        .then(function(json) {
+          if (json.ok && json.today) {
+            setSyncStatus('green');
+            applyData(json.today);
+          } else {
+            setSyncStatus('red');
+          }
+        })
+        .catch(function() {
+          setSyncStatus('red');
+        });
+      });
+
+      function flashLed(index) {
+        state.flashingLed = index;
+        updateLeds();
+        setTimeout(function() {
+          state.flashingLed = null;
+          updateLeds();
+        }, 600);
+      }
+
+      function tickRow(item, rowElem, rowIndex) {
+        if (!item.tickable) return;
+        if (rowElem.getAttribute('data-ticking') === 'true') return;
+        rowElem.setAttribute('data-ticking', 'true');
+
+        // Draw check immediately
+        var checkWrap = rowElem.querySelector('.checkbox-wrap');
+        if (checkWrap) {
+          checkWrap.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+        }
+
+        // Fade out in 300ms
+        rowElem.style.transition = 'opacity 300ms ease';
+        rowElem.style.opacity = '0';
+
+        fetch('/api/today-tick', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: item.id, done: true })
+        })
+        .then(function(res) {
+          if (!res.ok) throw new Error('Tick failed');
+          return res.json();
+        })
+        .then(function(json) {
+          if (json.ok) {
+            flashLed(rowIndex);
+            showToast(item.id);
+            if (json.today) {
+              setSyncStatus('green');
+              applyData(json.today);
+            }
+          } else {
+            throw new Error(json.error || 'Server error');
+          }
+        })
+        .catch(function() {
+          // Revert row
+          rowElem.style.transition = 'opacity 200ms ease';
+          rowElem.style.opacity = '1';
+          if (checkWrap) {
+            checkWrap.innerHTML = '';
+          }
+          rowElem.removeAttribute('data-ticking');
+          setSyncStatus('red');
+        });
+      }
+
+      function updateLeds() {
+        var items = (state.data && state.data.items) ? state.data.items : [];
+        var startIndex = state.currentPage * 4;
+        var pageItems = items.slice(startIndex, startIndex + 4);
+
+        for (var i = 0; i < 4; i++) {
+          var led = document.getElementById('led-' + (i + 1));
+          if (!led) continue;
+
+          if (state.flashingLed === i) {
+            led.className = 'led-btn led-flash-green';
+            continue;
+          }
+
+          var it = pageItems[i];
+          if (!it) {
+            led.className = 'led-btn led-off';
+          } else if (it.tag === '逾期') {
+            led.className = 'led-btn led-amber';
+          } else if (it.tickable === false) {
+            led.className = 'led-btn led-dim-blue';
+          } else {
+            led.className = 'led-btn led-dim-white';
+          }
+        }
+
+        // LED 5 (Page)
+        var led5 = document.getElementById('led-5');
+        if (led5) {
+          var hasRowsAfter = items.length > (state.currentPage + 1) * 4;
+          if (hasRowsAfter) {
+            led5.className = 'led-btn led-bright-white';
+          } else {
+            led5.className = 'led-btn led-off';
+          }
+        }
+
+        // LED 6 (Sync)
+        var led6 = document.getElementById('led-6');
+        if (led6) {
+          led6.className = 'led-btn ' + (state.syncStatus === 'green' ? 'led-green' : (state.syncStatus === 'red' ? 'led-red' : 'led-gray'));
+        }
+      }
+
+      function renderScreen() {
+        if (!state.data) {
+          centerMessageElem.style.display = 'block';
+          centerMessageElem.textContent = '接口没连上';
+          rowsContainer.innerHTML = '';
+          bottomBarElem.textContent = '';
+          updateLeds();
+          return;
+        }
+
+        var items = state.data.items || [];
+        var totalPages = Math.max(1, Math.ceil(items.length / 4));
+        if (state.currentPage >= totalPages) {
+          state.currentPage = Math.max(0, totalPages - 1);
+        }
+
+        // Update root attributes
+        screenElem.setAttribute('data-rev', state.data.rev || '');
+        screenElem.setAttribute('data-page', String(state.currentPage));
+
+        // Update top bar
+        var dateStr = '11-11';
+        if (state.data.date) {
+          var parts = state.data.date.split('-');
+          dateStr = parts.length >= 3 ? parts[1] + '-' + parts[2] : state.data.date;
+        }
+        var topText = (state.data.copy ? '副本 · ' : '') + '今天 ' + dateStr;
+        if (totalPages > 1) {
+          topText += ' ' + (state.currentPage + 1) + '/' + totalPages;
+        }
+        topLeftElem.textContent = topText;
+        doneCountElem.textContent = '✓ ' + (state.data.done_today != null ? state.data.done_today : 0);
+
+        // Render rows
+        rowsContainer.innerHTML = '';
+        if (items.length === 0) {
+          centerMessageElem.style.display = 'block';
+          centerMessageElem.textContent = '今天没有要做的';
+          bottomBarElem.textContent = '';
+          updateLeds();
+          return;
+        }
+
+        centerMessageElem.style.display = 'none';
+
+        var startIndex = state.currentPage * 4;
+        var pageItems = items.slice(startIndex, startIndex + 4);
+
+        pageItems.forEach(function(item, idx) {
+          var row = document.createElement('div');
+          row.className = 'row';
+          row.setAttribute('data-id', item.id || '');
+
+          var isOverdue = item.tag === '逾期';
+
+          // Amber bar if overdue
+          if (isOverdue) {
+            var bar = document.createElement('div');
+            bar.className = 'amber-bar';
+            row.appendChild(bar);
+          }
+
+          // Checkbox 44x44
+          var checkWrap = document.createElement('div');
+          checkWrap.className = 'checkbox-wrap ' + (item.tickable ? 'checkbox-tickable' : 'checkbox-untickable');
+          if (item.tickable) {
+            checkWrap.addEventListener('click', function() {
+              tickRow(item, row, idx);
+            });
+          }
+          row.appendChild(checkWrap);
+
+          // Middle text
+          var textWrap = document.createElement('div');
+          textWrap.className = 'text-content';
+
+          var title = document.createElement('div');
+          title.className = 'title';
+          title.textContent = item.title || '';
+          textWrap.appendChild(title);
+
+          if (item.next) {
+            var nextStep = document.createElement('div');
+            nextStep.className = 'next-step';
+            nextStep.textContent = item.next;
+            textWrap.appendChild(nextStep);
+          }
+          row.appendChild(textWrap);
+
+          // Right tag
+          var tag = document.createElement('div');
+          tag.className = 'tag-badge ' + (isOverdue ? 'tag-overdue' : 'tag-neutral');
+          tag.textContent = item.tag || '';
+          row.appendChild(tag);
+
+          rowsContainer.appendChild(row);
+        });
+
+        // Bottom bar
+        var remainingAfterPage = Math.max(0, items.length - (state.currentPage + 1) * 4);
+        if (remainingAfterPage > 0) {
+          bottomBarElem.textContent = '还有 ' + remainingAfterPage + ' 件';
+        } else {
+          bottomBarElem.textContent = '';
+        }
+
+        updateLeds();
+      }
+
+      function applyData(newData) {
+        state.data = newData;
+        renderScreen();
+      }
+
+      function fetchToday(forceRender) {
+        setSyncStatus('gray');
+        fetch('/api/today-unified')
+          .then(function(res) {
+            if (!res.ok) throw new Error('status ' + res.status);
+            return res.json();
+          })
+          .then(function(data) {
+            setSyncStatus('green');
+            if (!forceRender && state.data && state.data.rev && state.data.rev === data.rev) {
+              return; // Rev unchanged, skip re-render
+            }
+            applyData(data);
+          })
+          .catch(function() {
+            setSyncStatus('red');
+            if (!state.data) {
+              renderScreen();
+            }
+          });
+      }
+
+      // LED click events
+      for (var i = 1; i <= 4; i++) {
+        (function(idx) {
+          var led = document.getElementById('led-' + idx);
+          if (led) {
+            led.addEventListener('click', function() {
+              if (!state.data || !state.data.items) return;
+              var items = state.data.items;
+              var itemIndex = state.currentPage * 4 + (idx - 1);
+              var item = items[itemIndex];
+              if (!item || !item.tickable) return;
+              var rowElem = rowsContainer.children[idx - 1];
+              if (rowElem) {
+                tickRow(item, rowElem, idx - 1);
+              }
+            });
+          }
+        })(i);
+      }
+
+      // LED 5: Page Next
+      var led5 = document.getElementById('led-5');
+      if (led5) {
+        led5.addEventListener('click', function() {
+          if (!state.data || !state.data.items) return;
+          var items = state.data.items;
+          var totalPages = Math.max(1, Math.ceil(items.length / 4));
+          if (totalPages <= 1) return;
+          state.currentPage = (state.currentPage + 1) % totalPages;
+          renderScreen();
+        });
+      }
+
+      // LED 6: Sync Now
+      var led6 = document.getElementById('led-6');
+      if (led6) {
+        led6.addEventListener('click', function() {
+          fetchToday(true);
+        });
+      }
+
+      // Initial load & 2-second polling
+      fetchToday(true);
+      setInterval(function() {
+        fetchToday(false);
+      }, 2000);
+
+    })();
+  </script>
+</body>
+</html>

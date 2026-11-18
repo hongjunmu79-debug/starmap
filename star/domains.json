@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "note": "星图的领域划分：颜色 = 领域，亮度 = 状态。不改 content.json 的结构；新加的事由 Hermes 分拣时判一个领域补进 items。2026-11-08 定。",
+  "domains": [
+    { "id": "self",     "name": "个人系统",   "color": "#9B7BFF" },
+    { "id": "ai",       "name": "AI 与技术",  "color": "#4DA3FF" },
+    { "id": "edu",      "name": "教育",       "color": "#2FD3A0" },
+    { "id": "industry", "name": "行业与职业", "color": "#FFB020" },
+    { "id": "social",   "name": "游戏与社交", "color": "#FF6F91" },
+    { "id": "create",   "name": "创作与产品", "color": "#F5E663" }
+  ],
+  "unsortedColor": "#E8E4DA",
+  "statusBrightness": { "running": 1.3, "explore": 1.0, "paused": 0.85, "pool": 0.85, "frozen": 0.55 },
+  "items": {
+    "personal-os": "self", "hub": "self", "voice": "self", "cc-remote": "self",
+    "transformer": "ai", "harness": "ai", "ai-learning": "ai", "harmonyos": "ai",
+    "school": "edu", "math-fun": "edu",
+    "land-lease": "industry", "machinery": "industry", "job-search": "industry",
+    "offline-social": "social", "advanced-chess": "social", "earth-online": "social",
+    "lyrics": "create", "content": "create", "earplugs": "create"
+  }
+}

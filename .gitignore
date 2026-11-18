@@ -1,0 +1,18 @@
+# Python & runtime
+__pycache__/
+*.py[cod]
+*.log
+_tmp/
+
+# Syncthing & personal runtime data
+.sync-conflict-*
+events-*.jsonl
+star/maps/
+today-*.json
+horizon-*.json
+horizon-bridge/
+handoff/
+prepared/
+capture/
+brief.md
+全部清单.md

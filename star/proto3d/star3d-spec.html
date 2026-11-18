@@ -1,0 +1,2889 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>星图 · 3D · 脚本版</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #05060B;
+    color: #DCE3F2;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  }
+  #starmap-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: grab;
+  }
+  #starmap-canvas.dragging-cam {
+    cursor: grabbing;
+  }
+  #starmap-canvas.hovering-node,
+  #starmap-canvas.hovering-link {
+    cursor: pointer;
+  }
+  #top-left-hint {
+    position: fixed;
+    top: 18px;
+    left: 22px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: rgba(214, 224, 245, 0.68);
+    letter-spacing: 0.02em;
+    pointer-events: none;
+    z-index: 20;
+    transition: opacity 1.2s ease;
+    text-shadow: 0 1px 4px rgba(5, 6, 11, 0.95);
+  }
+  #top-left-hint.fade-out {
+    opacity: 0;
+  }
+  #top-right {
+    position: fixed;
+    top: 16px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 30;
+  }
+  .version-tag {
+    font-size: 12px;
+    color: rgba(200, 212, 236, 0.65);
+    background: rgba(13, 17, 30, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 5px 11px;
+    border-radius: 999px;
+    backdrop-filter: blur(8px);
+    letter-spacing: 0.04em;
+    pointer-events: none;
+  }
+  #mute {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(13, 17, 30, 0.72);
+    color: rgba(214, 224, 245, 0.78);
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  #mute:hover {
+    background: rgba(26, 34, 58, 0.85);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.22);
+  }
+  #mute.is-muted {
+    color: rgba(214, 224, 245, 0.35);
+  }
+  #legend {
+    position: fixed;
+    left: 22px;
+    bottom: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    z-index: 20;
+    pointer-events: none;
+  }
+  .legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: rgba(210, 220, 242, 0.72);
+    text-shadow: 0 1px 3px rgba(5, 6, 11, 0.95);
+  }
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .legend-note {
+    font-size: 11px;
+    color: rgba(175, 190, 220, 0.46);
+    text-shadow: 0 1px 3px rgba(5, 6, 11, 0.95);
+  }
+  #idea-box-wrap {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 25;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #idea-input {
+    width: 560px;
+    max-width: calc(100vw - 40px);
+    height: 46px;
+    border-radius: 23px;
+    background: rgba(12, 16, 28, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #EEF2FC;
+    font-size: 14px;
+    padding: 0 22px;
+    outline: none;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    user-select: text;
+    -webkit-user-select: text;
+  }
+  #idea-input::placeholder {
+    color: rgba(186, 198, 226, 0.45);
+  }
+  #idea-input:focus {
+    border-color: rgba(145, 175, 255, 0.38);
+    background: rgba(15, 20, 35, 0.9);
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.58), 0 0 0 3px rgba(120, 155, 255, 0.1);
+  }
+</style>
+</head>
+<body>
+  <canvas id="starmap-canvas"></canvas>
+
+  <div id="top-left-hint">拖动空白转镜头 · 滚轮推拉 · 拖球固定 · 拉线弹火花 · 快划切线（Ctrl+Z 撤回） · 单击球聚焦</div>
+
+  <div id="top-right">
+    <span class="version-tag">3D · 脚本版</span>
+    <button id="mute" type="button" title="静音切换" aria-label="静音切换">♪</button>
+  </div>
+
+  <div id="legend">
+    <div class="legend-items" id="legend-items"></div>
+    <div class="legend-note" id="legend-note"></div>
+  </div>
+
+  <div id="idea-box-wrap">
+    <input id="idea-input" type="text" autocomplete="off" spellcheck="false" placeholder="想到什么，直接打，回车记下">
+  </div>
+
+<script>
+/* ===== ref/data.js (inlined as is) ===== */
+/* 星图的数据（从 2D 版原样抽出）。constellations：4 个星座中心（id、title、domain 领域、status 状态、icon、includes 成员文字、incIcons 成员图标，
+   at 是 2D 版的坐标，3D 版不用）；domains：6 个领域和颜色，unsortedColor 是还没归类的想法的颜色；ideas：想法；links：已有的提议线；
+   hints：拖近时才浮出的线索；expansions：双击或新想法后长出的可能性示例（key 是节点 id）；icons：19 个 24x24 线条图标的 SVG path；
+   lensIcons：可能性种类对应的图标。 */
+const DATA = {
+  domains: [
+    { id: 'self',     name: '个人系统',   color: '#9B7BFF' },
+    { id: 'ai',       name: 'AI 与技术',  color: '#4DA3FF' },
+    { id: 'edu',      name: '教育',       color: '#2FD3A0' },
+    { id: 'industry', name: '行业与职业', color: '#FFB020' },
+    { id: 'social',   name: '游戏与社交', color: '#FF6F91' },
+    { id: 'create',   name: '创作与产品', color: '#F5E663' }
+  ],
+  unsortedColor: '#E8E4DA',
+  legendNote: '亮：在跑　暗：冻结　白：还没归类',
+  icons: {
+    chip:     'M8 7h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z M10 10h4v4h-4z M10 4v3 M14 4v3 M10 17v3 M14 17v3 M4 10h3 M4 14h3 M17 10h3 M17 14h3',
+    gear:     'M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6z M12 6a6 6 0 1 0 0 12a6 6 0 1 0 0-12z M12 3v3 M12 18v3 M3 12h3 M18 12h3 M5.6 5.6L7.8 7.8 M16.2 16.2L18.4 18.4 M5.6 18.4L7.8 16.2 M16.2 7.8L18.4 5.6',
+    check:    'M5 5h14v14H5z M8.5 12.5l2.5 2.5l4.5-5',
+    chat:     'M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-7l-4 4v-4H6a2 2 0 0 1-2-2z',
+    spark:    'M12 3l2.2 6.8L21 12l-6.8 2.2L12 21l-2.2-6.8L3 12l6.8-2.2z',
+    people:   'M9 11a3 3 0 1 0 0-6a3 3 0 1 0 0 6z M3 20a6 6 0 0 1 12 0 M16 11a2.5 2.5 0 1 0 0-5 M17 14.5a5 5 0 0 1 4 5.5',
+    dice:     'M5 5h14v14H5z M9 9h.01 M12 12h.01 M15 15h.01',
+    card:     'M7 3h10a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z M12 9l2.5 3l-2.5 3l-2.5-3z',
+    cap:      'M2 9l10-5l10 5l-10 5z M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5 M22 9v5',
+    flask:    'M9 3h6 M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3 M7.5 15h9',
+    doc:      'M6 3h8l4 4v14H6z M14 3v4h4 M9 12h6 M9 16h6',
+    book:     'M3 5h6a3 3 0 0 1 3 3v12a2.5 2.5 0 0 0-2.5-2.5H3z M21 5h-6a3 3 0 0 0-3 3v12a2.5 2.5 0 0 1 2.5-2.5H21z',
+    tool:     'M14.5 3.5a4.5 4.5 0 0 0-4.2 6.1L3.5 16.4a1.5 1.5 0 0 0 2.1 2.1l6.8-6.8a4.5 4.5 0 0 0 6.1-4.2l-2.6 2.6l-2.1-.5l-.5-2.1z',
+    sliders:  'M4 7h16 M4 12h16 M4 17h16 M9 5v4 M15 10v4 M7 15v4',
+    db:       'M5 6a7 2.5 0 1 0 14 0a7 2.5 0 1 0-14 0z M5 6v12a7 2.5 0 0 0 14 0V6 M5 12a7 2.5 0 0 0 14 0',
+    bulb:     'M9 18h6 M10 21h4 M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z',
+    flag:     'M5 21V4 M5 4h11l-2 4l2 4H5',
+    question: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18z M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14 M12 17h.01',
+    link:     'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1 M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1'
+  },
+  lensIcons: { '可以变成': 'spark', '第一步': 'flag', '卡在': 'question', '像': 'link', '连着': 'link', '两者之间': 'spark' },
+  constellations: [
+    { id: 'personal-os', domain: 'self', status: 'explore', icon: 'gear', incIcons: ['check', 'chat', 'spark', 'chip', 'chip', 'check'], title: '个人工作台', at: [-430, -230], includes: [
+      '待办工作台（已完成，想扩展）', '想法记录系统（飞书、Telegram、微信发给 Hermes）', '灵感速记（星空思维导图）',
+      '思维收集器硬件', 'ESP32「坐下即知」', '实体指挥台的「今日任务」'] },
+    { id: 'offline-social', domain: 'social', status: 'pool', icon: 'people', incIcons: ['dice', 'people', 'card'], title: '线下陌生人局', at: [430, -210], includes: [
+      '线下互动娱乐交友 station', '新身份认同社交中心', '实体指挥台的狼人杀、阿瓦隆（20 张 NFC 卡）'] },
+    { id: 'school', domain: 'edu', status: 'running', icon: 'cap', incIcons: ['flask', 'doc', 'book'], title: '中东学校', at: [-380, 260], includes: [
+      'ESP32 三语科学实验台', '一键备课', '老师工作台'] },
+    { id: 'land-lease', domain: 'industry', status: 'running', icon: 'doc', incIcons: ['doc', 'book', 'tool', 'sliders', 'db', 'bulb'], title: '土地租赁合同重做', at: [420, 270], includes: [
+      '土地租赁合同管理重做', '产品方法论（AI-native SDLC）', '黑客松工作台', '小模型微调', 'LLM wiki 与企业知识库', '产品经理默会知识'] }
+  ],
+  ideas: [
+    { id: 'boardgame', text: '做一个桌游', icon: 'dice', at: [250, -40] }
+  ],
+  hints: [
+    { a: 'inc:school:1',         b: 'inc:land-lease:5',     kind: 'supports',    label: '备课经验算默会知识吗？' },
+    { a: 'inc:school:2',         b: 'inc:personal-os:0',    kind: 'same',        label: '能共用一个工作台吗？' },
+    { a: 'inc:school:0',         b: 'inc:personal-os:4',    kind: 'same',        label: '同一块 ESP32？' },
+    { a: 'inc:land-lease:4',     b: 'inc:personal-os:1',    kind: 'extends',     label: '想法能进知识库吗？' },
+    { a: 'inc:land-lease:3',     b: 'inc:personal-os:2',    kind: 'extends',     label: '用你的想法微调？' },
+    { a: 'inc:land-lease:2',     b: 'inc:offline-social:0', kind: 'extends',     label: '办一场线下黑客松？' },
+    { a: 'inc:offline-social:2', b: 'inc:school:0',         kind: 'extends',     label: 'NFC 卡能进课堂吗？' },
+    { a: 'idea:boardgame',       b: 'inc:offline-social:2', kind: 'part_of',     label: '桌游就用这 20 张卡？' },
+    { a: 'inc:land-lease:1',     b: 'inc:personal-os:2',    kind: 'contradicts', label: '流程会掐死灵感吗？' },
+    { a: 'inc:personal-os:5',    b: 'inc:offline-social:2', kind: 'same',        label: '同一个指挥台？' }
+  ],
+  links: [
+    { a: 'inc:personal-os:3', b: 'inc:offline-social:2', kind: 'confirmed', label: '同一块硬件' },
+    { a: 'idea:boardgame', b: 'item:offline-social', kind: 'suggest', label: '属于这件事吗？' },
+    { a: 'idea:boardgame', b: 'inc:school:0', kind: 'suggest', label: '能变成课堂游戏吗？' },
+    { a: 'inc:personal-os:2', b: 'inc:land-lease:5', kind: 'suggest', label: '能装下默会知识吗？' }
+  ],
+  expansions: {
+    'idea:boardgame': [
+      { id: 'bg1', lens: '可以变成', text: '拿 20 张 NFC 卡当牌，刷卡出题' },
+      { id: 'bg2', lens: '可以变成', text: '中东学校的三语实验桌游' },
+      { id: 'bg3', lens: '第一步', text: '一页纸：几人玩、一局多久、每回合做什么决定' },
+      { id: 'bg4', lens: '卡在', text: '每回合到底让人纠结什么？' },
+      { id: 'bg5', lens: '像', text: '狼人杀：靠说服别人赢' }
+    ],
+    'poss:bg1': [
+      { id: 'bg1a', lens: '第一步', text: '先用纸卡试玩一局，不碰硬件' },
+      { id: 'bg1b', lens: '卡在', text: 'AI 出题会不会拖慢节奏？' },
+      { id: 'bg1c', lens: '可以变成', text: '实体指挥台当裁判，屏幕计分' }
+    ],
+    'poss:bg4': [
+      { id: 'bg4a', lens: '可以变成', text: '押注：猜别人会怎么选' },
+      { id: 'bg4b', lens: '像', text: '阿瓦隆的组队投票' }
+    ],
+    'idea:phone-demo': [
+      { id: 'ph1', lens: '连着', text: '产品经理默会知识' },
+      { id: 'ph2', lens: '可以变成', text: '一键备课时顺手记下老师的「为什么」' },
+      { id: 'ph3', lens: '第一步', text: '问一位老师：哪个决定她不假思索就做了？' },
+      { id: 'ph4', lens: '卡在', text: '默会的东西，老师自己说得出来吗？' }
+    ]
+  },
+  sparks: {
+    'inc:offline-social:2|inc:personal-os:3': '把想法卡做成 NFC 卡：刷一张，收一个念头'
+  },
+  phoneDemo: { id: 'phone-demo', text: '老师备课的经验，算不算默会知识？', icon: 'bulb', tag: '手机 · 记个想法（示例）', at: [20, 300] },
+  placeholder: [
+    { lens: '可以变成', text: '（原型示例）它可以变成…' },
+    { lens: '第一步', text: '（原型示例）30 分钟能做的第一步…' },
+    { lens: '卡在', text: '（原型示例）最没把握的地方…' }
+  ],
+  sparkPlaceholder: '（原型示例）这两条之间，会长出什么？',
+  sparkLens: '两者之间',
+  hint: '拖近：有关系会浮出线索 · 快速一划：切断线（Ctrl+Z 撤销）· 拉线中间：弹弓 · 单击：聚焦 · 双击：长出可能性 · 左下角：连线 / 批注 / 刷子 · Esc：退回',
+  badge: '原型 · 可能性文字是示例'
+};
+
+/* ===== ref/audio.js (inlined as is) ===== */
+/* 声音模块（从 2D 版抽出，已调响）。第一次点击或按键时调用 ensureAudio()；之后直接调用：
+   creak(t, scale)   拉皮筋时的「吱」，t 是张力 0 到 1；  twang(t, launch)   松手的「嘣」，launch 为真时再带一声「嗖」；
+   whoosh()          弹出火花的「嗖」；              swishSound()     一划切线时刀光的「嗖」；    sliceSound()   线被切断的「咔」。
+   只有这五种声音，别的操作一律静音。audioLog 记录每次真正发声（测试用）。setMuted(true/false) 静音开关。 */
+const SOUND = {
+    master: 0.8,
+    comp: { threshold: -8, knee: 6, ratio: 6, attack: 0.002, release: 0.15 },
+    creak: { stepT: 0.02, maxPerSec: 40, fBase: 700, fK: 1900, q: 2.2, attack: 0.002, decay: 0.028,
+             gainBase: 0.5, gainK: 0.5, toneBase: 90, toneK: 260, toneGain: 0.14, toneDecay: 0.035,
+             jitter: 0.08, nodeDragScale: 0.6, nodeDragFrom: 0.7 },
+    twang: { minT: 0.08, f0Base: 240, f0K: 200, bendFrom: 1.6, bendMs: 40, vibHz: 7.5, vibDepth: 0.03,
+             tauBase: 0.07, tauK: 0.12, gainBase: 0.10, gainK: 0.25, snapGainK: 0.22, snapDecay: 0.012, snapHp: 2000 },
+    whoosh: { fFrom: 1800, fTo: 350, q: 0.9, ms: 260, gain: 0.6, attack: 0.02 },
+    swish: { fFrom: 3200, fTo: 900, q: 0.7, ms: 140, gain: 0.5, attack: 0.012 },
+    slice: { hp: 2200, lp: 6500, noiseGain: 0.4, noiseDecay: 0.035, pluckFrom: 340, pluckTo: 210, pluckMs: 90, pluckGain: 0.22, pluckDecay: 0.09 },
+    logMax: 200
+  };
+let audioCtx = null, masterGain = null, noiseBuffer = null, muted = false, lastCreakAt = -Infinity;
+const audioLog = [];
+function ensureAudio() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    try {
+      audioCtx = new AC();
+      const comp = audioCtx.createDynamicsCompressor();
+      comp.threshold.value = SOUND.comp.threshold;
+      comp.ratio.value = SOUND.comp.ratio;
+      comp.knee.value = SOUND.comp.knee;
+      comp.attack.value = SOUND.comp.attack;
+      comp.release.value = SOUND.comp.release;
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = muted ? 0 : SOUND.master;
+      masterGain.connect(comp);
+      comp.connect(audioCtx.destination);
+      const len = Math.max(1, Math.floor(audioCtx.sampleRate));
+      noiseBuffer = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+            const unlock = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+      const us = audioCtx.createBufferSource(); us.buffer = unlock; us.connect(audioCtx.destination); us.start(0);
+    } catch (err) {
+      audioCtx = null;
+    }
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(() => {});
+  }
+}
+function logAudio(type, t) {
+  audioLog.push({ type: type, t: t, at: performance.now() });
+  while (audioLog.length > SOUND.logMax) audioLog.shift();
+}
+function canPlaySound() { return !!audioCtx && !muted && audioCtx.state !== 'closed'; }
+function creak(t, scale) {
+  if (!canPlaySound() || !noiseBuffer) return;
+  const nowMs = performance.now();
+  if (nowMs - lastCreakAt < 1000 / SOUND.creak.maxPerSec) return;
+  lastCreakAt = nowMs;
+  const c = SOUND.creak;
+  const now = audioCtx.currentTime + 0.003;
+  const jitter = 1 + (Math.random() * 2 - 1) * c.jitter;
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = noiseBuffer;
+  const bp = audioCtx.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = (c.fBase + c.fK * t) * jitter;
+  bp.Q.value = c.q;
+  const ng = audioCtx.createGain();
+  const peak = (c.gainBase + c.gainK * t) * scale;
+  ng.gain.setValueAtTime(0.0001, now);
+  ng.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), now + c.attack);
+  ng.gain.exponentialRampToValueAtTime(0.0001, now + c.attack + c.decay);
+  noise.connect(bp);
+  bp.connect(ng);
+  ng.connect(masterGain);
+  const tone = audioCtx.createOscillator();
+  tone.type = 'triangle';
+  tone.frequency.value = c.toneBase + c.toneK * t;
+  const tg = audioCtx.createGain();
+  const tPeak = Math.max(0.0002, c.toneGain * t * scale);
+  tg.gain.setValueAtTime(0.0001, now);
+  tg.gain.exponentialRampToValueAtTime(tPeak, now + c.attack);
+  tg.gain.exponentialRampToValueAtTime(0.0001, now + c.attack + c.toneDecay);
+  tone.connect(tg);
+  tg.connect(masterGain);
+  try {
+    noise.start(now, Math.random() * 0.7);
+    tone.start(now);
+    noise.stop(now + 0.06);
+    tone.stop(now + 0.06);
+  } catch (err) { /* ignore */ }
+  logAudio('creak', t);
+}
+function twang(t, launch) {
+  if (!canPlaySound()) return;
+  const c = SOUND.twang;
+  const now = audioCtx.currentTime + 0.003;
+  const f0 = c.f0Base + c.f0K * t;
+  const osc = audioCtx.createOscillator();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(Math.max(30, f0 * c.bendFrom), now);
+  osc.frequency.exponentialRampToValueAtTime(Math.max(30, f0), now + c.bendMs / 1000);
+  const lfo = audioCtx.createOscillator();
+  lfo.type = 'sine';
+  lfo.frequency.value = c.vibHz;
+  const lfoGain = audioCtx.createGain();
+  lfoGain.gain.value = f0 * c.vibDepth;
+  lfo.connect(lfoGain);
+  lfoGain.connect(osc.frequency);
+  const g = audioCtx.createGain();
+  const peak = c.gainBase + c.gainK * t;
+  const tau = c.tauBase + c.tauK * t;
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.linearRampToValueAtTime(Math.max(0.0002, peak), now + 0.003);
+  g.gain.setTargetAtTime(0.0001, now + 0.003, tau);
+  osc.connect(g);
+  g.connect(masterGain);
+  try {
+    osc.start(now);
+    lfo.start(now);
+    osc.stop(now + 0.003 + tau * 5);
+    lfo.stop(now + 0.003 + tau * 5);
+  } catch (err) { /* ignore */ }
+  if (noiseBuffer) {
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = noiseBuffer;
+    const hp = audioCtx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = c.snapHp;
+    const ng = audioCtx.createGain();
+    const np = Math.max(0.0002, c.snapGainK * t);
+    ng.gain.setValueAtTime(np, now);
+    ng.gain.exponentialRampToValueAtTime(0.0001, now + c.snapDecay);
+    noise.connect(hp);
+    hp.connect(ng);
+    ng.connect(masterGain);
+    try { noise.start(now, Math.random() * 0.5); noise.stop(now + 0.06); } catch (err) { /* ignore */ }
+  }
+  logAudio('twang', t);
+  if (launch) whoosh();
+}
+function whoosh() {
+  if (!canPlaySound() || !noiseBuffer) return;
+  const c = SOUND.whoosh;
+  const now = audioCtx.currentTime + 0.003;
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = noiseBuffer;
+  const bp = audioCtx.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.Q.value = c.q;
+  bp.frequency.setValueAtTime(c.fFrom, now);
+  bp.frequency.exponentialRampToValueAtTime(Math.max(20, c.fTo), now + c.ms / 1000);
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.linearRampToValueAtTime(c.gain, now + c.attack);
+  g.gain.linearRampToValueAtTime(0.0001, now + c.ms / 1000);
+  noise.connect(bp);
+  bp.connect(g);
+  g.connect(masterGain);
+  try { noise.start(now, Math.random() * 0.5); noise.stop(now + c.ms / 1000); } catch (err) { /* ignore */ }
+  logAudio('whoosh', 0);
+}
+function swishSound() {
+  if (!canPlaySound() || !noiseBuffer) return;
+  const c = SOUND.swish, now = audioCtx.currentTime + 0.003;
+  const src = audioCtx.createBufferSource(); src.buffer = noiseBuffer;
+  const bp = audioCtx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = c.q;
+  bp.frequency.setValueAtTime(c.fFrom, now);
+  bp.frequency.exponentialRampToValueAtTime(c.fTo, now + c.ms / 1000);
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.linearRampToValueAtTime(c.gain, now + c.attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + c.ms / 1000);
+  src.connect(bp); bp.connect(g); g.connect(masterGain);
+  src.start(now, Math.random() * 0.5); src.stop(now + c.ms / 1000 + 0.05);
+  logAudio('swish', 1);
+}
+function sliceSound() {
+  if (!canPlaySound() || !noiseBuffer) return;
+  const c = SOUND.slice, now = audioCtx.currentTime + 0.003;
+  const src = audioCtx.createBufferSource(); src.buffer = noiseBuffer;
+  const hp = audioCtx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = c.hp;
+  const lp = audioCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = c.lp;
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.linearRampToValueAtTime(c.noiseGain, now + 0.001);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + 0.001 + c.noiseDecay);
+  src.connect(hp); hp.connect(lp); lp.connect(g); g.connect(masterGain);
+  src.start(now, Math.random() * 0.5); src.stop(now + 0.15);
+  const o = audioCtx.createOscillator(); o.type = 'triangle';
+  o.frequency.setValueAtTime(c.pluckFrom, now);
+  o.frequency.exponentialRampToValueAtTime(c.pluckTo, now + c.pluckMs / 1000);
+  const og = audioCtx.createGain();
+  og.gain.setValueAtTime(0.0001, now);
+  og.gain.linearRampToValueAtTime(c.pluckGain, now + 0.002);
+  og.gain.exponentialRampToValueAtTime(0.0001, now + 0.002 + c.pluckDecay);
+  o.connect(og); og.connect(masterGain); o.start(now); o.stop(now + 0.25);
+  logAudio('slice', 1);
+}
+function setMuted(b) {
+  muted = !!b;
+  if (masterGain && audioCtx) masterGain.gain.setTargetAtTime(muted ? 0 : SOUND.master, audioCtx.currentTime, 0.01);
+}
+
+/* ===== ref/forces-panel.js (inlined as is) ===== */
+/* FORCES-PANEL:BEGIN */
+/* 布局力面板：向心力、排斥力、连线吸引力、连线长度（参考 Obsidian 图谱的 Forces），
+   加四种方式：Claude 调的一组 / Gemini 调的一组 / 手动拖滑块 / DeepSeek 重排。
+   自包含：自己注入样式、自己建 DOM，不依赖页面里的任何变量。
+
+   const panel = createForcesPanel({
+     mode: '2d',                       // '2d' 或 '3d'，只用来告诉 DeepSeek 要不要给 z
+     presets: { claude: {center, repel, link, distance}, gemini: {…} },   // 四个数都在 0 到 1
+     initial: { center, repel, link, distance },  initialMode: 'claude',
+     modelReady: false,                // 能不能用 DeepSeek（页面是通过本机服务打开的才为 true）
+     getStats: () => ({ nodes, links, ideas, labelOverlaps, fits, nearestMin, constellations: [{id,title,members,ideas,status}] }),
+     onChange: (values) => {},         // 数值每变一次就调用一次（拖滑块、预设过渡的每一帧、重排）
+     applyAnchors: (anchors) => {}     // DeepSeek 给的星座目标位置 [{id,x,y,z?}]，x,y,z 都在 -1 到 1
+   });
+   panel.setValues({center:0.5}, animate)  panel.getValues()  panel.mode()  panel.setMode('manual')
+   panel.open()  panel.close()  panel.isOpen()  panel.setModelReady(true)  panel.rearrange()  panel.setWhy('一句话')
+*/
+function createForcesPanel(opts) {
+  opts = opts || {};
+  var ROWS = [
+    ['center', '向心力', '把所有节点往中间拉，越大越集中'],
+    ['repel', '排斥力', '节点之间互相推开，越大越松'],
+    ['link', '连线吸引力', '相连的节点互相拉近'],
+    ['distance', '连线长度', '相连节点之间的距离']
+  ];
+  var CHIPS = [['claude', 'Claude'], ['gemini', 'Gemini'], ['manual', '手动'], ['deepseek', 'DeepSeek 重排']];
+  var st = {
+    values: Object.assign({ center: 0.5, repel: 0.5, link: 0.5, distance: 0.5 }, opts.initial || {}),
+    mode: opts.initialMode || 'claude', busy: false, modelReady: !!opts.modelReady, tween: 0, open: false
+  };
+  var presets = opts.presets || {};
+
+  if (!document.getElementById('forces-panel-style')) {
+    var css = document.createElement('style');
+    css.id = 'forces-panel-style';
+    css.textContent =
+      '#forces-btn{pointer-events:auto;width:24px;height:24px;padding:0;border:0;background:transparent;color:#EEF1FA;opacity:.5;cursor:pointer;display:grid;place-items:center}' +
+      '#forces-btn:hover,#forces-btn.on{opacity:.92}#forces-btn svg{width:20px;height:20px;display:block}' +
+      '#forces-panel{position:fixed;top:56px;right:24px;width:292px;z-index:9;padding:14px 16px 12px;border-radius:12px;background:rgba(14,18,32,.88);' +
+      '-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);color:#EEF1FA;' +
+      'font:12px/1.45 var(--font,"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif);display:none;user-select:none}' +
+      '#forces-panel.open{display:block}' +
+      '#forces-panel .fp-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:13px;font-weight:600}' +
+      '#forces-panel .fp-x{border:0;background:transparent;color:#EEF1FA;opacity:.55;cursor:pointer;font-size:16px;line-height:1;padding:0 2px}' +
+      '#forces-panel .fp-x:hover{opacity:.95}' +
+      '#forces-panel .fp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}' +
+      '#forces-panel .fp-chip{height:26px;padding:0 10px;border-radius:13px;border:1px solid rgba(255,255,255,.14);background:transparent;color:#EEF1FA;opacity:.7;cursor:pointer;font:inherit}' +
+      '#forces-panel .fp-chip:hover{opacity:1}' +
+      '#forces-panel .fp-chip.on{opacity:1;border-color:rgba(220,211,255,.75);background:rgba(155,123,255,.2)}' +
+      '#forces-panel .fp-chip[disabled]{opacity:.32;cursor:not-allowed}' +
+      '#forces-panel .fp-row{margin:8px 0 10px}' +
+      '#forces-panel .fp-lab{display:flex;justify-content:space-between;margin-bottom:3px}' +
+      '#forces-panel .fp-lab span:last-child{opacity:.6;font-variant-numeric:tabular-nums}' +
+      '#forces-panel input[type=range]{width:100%;margin:0;accent-color:#9B7BFF;cursor:pointer}' +
+      '#forces-panel .fp-why{min-height:17px;margin-top:6px;opacity:.7;font-size:12px}';
+    document.head.appendChild(css);
+  }
+
+  var btn = document.createElement('button');
+  btn.id = 'forces-btn';
+  btn.type = 'button';
+  btn.title = '布局力：向心力、排斥力、连线吸引力、连线长度';
+  btn.setAttribute('aria-label', '布局力');
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16M9 5v4M15 10v4M7 15v4"/></svg>';
+  var host = document.getElementById('top-right');
+  var mute = document.getElementById('mute');
+  if (host) host.insertBefore(btn, mute && mute.parentNode === host ? mute : null);
+  else { btn.style.cssText = 'position:fixed;top:22px;right:60px;z-index:9;opacity:.6'; document.body.appendChild(btn); }
+
+  var panel = document.createElement('div');
+  panel.id = 'forces-panel';
+  var html = '<div class="fp-head"><span>布局力</span><button class="fp-x" type="button" aria-label="关闭">×</button></div><div class="fp-chips">';
+  CHIPS.forEach(function (c) { html += '<button class="fp-chip" type="button" data-mode="' + c[0] + '">' + c[1] + '</button>'; });
+  html += '</div>';
+  ROWS.forEach(function (r) {
+    html += '<div class="fp-row" title="' + r[2] + '"><div class="fp-lab"><span>' + r[1] + '</span><span data-val="' + r[0] + '"></span></div>' +
+            '<input type="range" min="0" max="100" step="1" data-key="' + r[0] + '"></div>';
+  });
+  html += '<div class="fp-why"></div>';
+  panel.innerHTML = html;
+  document.body.appendChild(panel);
+  ['pointerdown', 'pointerup', 'click', 'wheel'].forEach(function (t) {
+    panel.addEventListener(t, function (e) { e.stopPropagation(); });
+    btn.addEventListener(t, function (e) { e.stopPropagation(); });
+  });
+
+  var chipEls = panel.querySelectorAll('.fp-chip');
+  var sliders = panel.querySelectorAll('input[type=range]');
+  var whyEl = panel.querySelector('.fp-why');
+
+  function notify() { if (opts.onChange) opts.onChange(Object.assign({}, st.values)); }
+  function render() {
+    chipEls.forEach(function (el) {
+      var m = el.getAttribute('data-mode');
+      el.classList.toggle('on', st.mode === m);
+      el.setAttribute('aria-pressed', st.mode === m ? 'true' : 'false');
+      if (m === 'deepseek') {
+        el.disabled = !st.modelReady || st.busy;
+        el.textContent = st.busy ? 'DeepSeek …' : 'DeepSeek 重排';
+        el.title = st.modelReady ? '请 DeepSeek 看一眼这张图，给出一组新的数值和星座位置' : '需要通过本机服务打开（双击 start-star.bat）才能用';
+      }
+    });
+    sliders.forEach(function (el) {
+      var k = el.getAttribute('data-key');
+      var v = Math.round(st.values[k] * 100);
+      if (document.activeElement !== el || !st.tween) el.value = v;
+      var out = panel.querySelector('[data-val="' + k + '"]');
+      if (out) out.textContent = v;
+    });
+    btn.classList.toggle('on', st.open);
+  }
+  function setWhy(t) { whyEl.textContent = t || ''; }
+  function clamp01(v) { v = Number(v); return v === v ? Math.max(0, Math.min(1, v)) : 0.5; }
+
+  function setValues(v, animate) {
+    cancelAnimationFrame(st.tween); st.tween = 0;
+    var target = {}, from = Object.assign({}, st.values);
+    ROWS.forEach(function (r) { var k = r[0]; target[k] = v && v[k] != null ? clamp01(v[k]) : st.values[k]; });
+    if (!animate) { st.values = target; render(); notify(); return; }
+    var t0 = performance.now(), ms = 800;
+    (function step(now) {
+      var p = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - p, 3);
+      ROWS.forEach(function (r) { var k = r[0]; st.values[k] = from[k] + (target[k] - from[k]) * e; });
+      render(); notify();
+      if (p < 1) st.tween = requestAnimationFrame(step); else st.tween = 0;
+    })(t0);
+  }
+  function setMode(m) { st.mode = m; render(); }
+  function open() { st.open = true; panel.classList.add('open'); render(); }
+  function close() { st.open = false; panel.classList.remove('open'); render(); }
+
+  function rearrange() {
+    if (st.busy || !st.modelReady) return Promise.resolve(false);
+    st.busy = true; render(); setWhy('DeepSeek 想一想…');
+    var ctrl = new AbortController(), to = setTimeout(function () { ctrl.abort(); }, 15000);
+    var body = { mode: opts.mode || '2d', viewport: [innerWidth, innerHeight], current: Object.assign({}, st.values), stats: opts.getStats ? opts.getStats() : {} };
+    return fetch('/api/layout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctrl.signal })
+      .then(function (r) { clearTimeout(to); if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+      .then(function (res) {
+        st.mode = 'deepseek';
+        setValues({ center: res.center, repel: res.repel, link: res.link, distance: res.distance }, true);
+        if (opts.applyAnchors && res.anchors && res.anchors.length) opts.applyAnchors(res.anchors);
+        setWhy(res.why || '已重排');
+        return true;
+      })
+      .catch(function () { clearTimeout(to); setWhy('没连上模型，保持现在的布局'); return false; })
+      .then(function (ok) { st.busy = false; render(); return ok; });
+  }
+
+  chipEls.forEach(function (el) {
+    el.addEventListener('click', function () {
+      var m = el.getAttribute('data-mode');
+      if (m === 'deepseek') { rearrange(); return; }
+      st.mode = m;
+      if (m === 'claude' || m === 'gemini') { if (presets[m]) { setValues(presets[m], true); setWhy(m === 'claude' ? 'Claude 调的一组' : 'Gemini 调的一组'); } }
+      else setWhy('拖滑块自己调');
+      render();
+    });
+  });
+  sliders.forEach(function (el) {
+    el.addEventListener('input', function () {
+      cancelAnimationFrame(st.tween); st.tween = 0;
+      st.values[el.getAttribute('data-key')] = clamp01(el.value / 100);
+      st.mode = 'manual'; setWhy('手动');
+      render(); notify();
+    });
+  });
+  btn.addEventListener('click', function () { if (st.open) close(); else open(); });
+  panel.querySelector('.fp-x').addEventListener('click', close);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && st.open) { close(); e.stopPropagation(); e.preventDefault(); }
+  }, true);
+
+  render();
+  return {
+    setValues: setValues, getValues: function () { return Object.assign({}, st.values); },
+    mode: function () { return st.mode; }, setMode: setMode, open: open, close: close, isOpen: function () { return st.open; },
+    setModelReady: function (b) { st.modelReady = !!b; render(); }, rearrange: rearrange, setWhy: setWhy
+  };
+}
+/* FORCES-PANEL:END */
+
+/* ===== assembly override: the 2D hint line mentions tools that this 3D page does not have ===== */
+DATA.hint = "拖空白：转镜头 · 滚轮：推拉 · Shift 或右键拖：平移 · 双击空白：复位 · 拖球：放下固定 · 按住线中间往外拉：弹弓 · 快速一划：切线（Ctrl+Z 撤销） · 单击球：聚焦 · 右上角齿轮：布局力";
+/* ===== parts/20-core.js ===== */
+const PRESETS = {
+  claude: { center: 0.30, repel: 0.85, link: 0.50, distance: 0.80 },   // Claude: swept by metrics (tools/tune3d.py)
+  gemini: { center: 0.36, repel: 0.46, link: 0.54, distance: 0.44 }
+};
+
+const F_PERSP = 900;
+const D_INIT = 1100;
+const YAW_INIT = 0.35;
+const PITCH_INIT = 0.22;
+const REF_S = F_PERSP / D_INIT;
+
+const STATUS_Z = {
+  running: -140,
+  explore: 0,
+  pool: 140,
+  frozen: 280
+};
+
+const STATUS_BRIGHT = {
+  running: 1.3,
+  explore: 1.0,
+  pool: 0.85,
+  frozen: 0.55
+};
+
+const LINK_PARAMS = {
+  struct:    { L0: 150, k0: 0.55, width: 1.5 },
+  poss:      { L0: 160, k0: 0.45, width: 1.3 },
+  kept:      { L0: 160, k0: 0.45, width: 1.5 },
+  mine:      { L0: 340, k0: 0.30, width: 1.6 },
+  confirmed: { L0: 360, k0: 0.04, width: 1.5 },
+  suggest:   { L0: 360, k0: 0.03, width: 1.3 }
+};
+
+const canvas = document.getElementById('starmap-canvas');
+const ctx = canvas.getContext('2d');
+let W = window.innerWidth;
+let H = window.innerHeight;
+let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+let forces = {
+  center: PRESETS.claude.center,
+  repel: PRESETS.claude.repel,
+  link: PRESETS.claude.link,
+  distance: PRESETS.claude.distance
+};
+
+let nodes = [];
+let nodeMap = new Map();
+let links = [];
+let bgStars = [];
+let ripples = [];
+let sparks = [];
+let cutHistory = [];
+let slashTrail = [];
+let elastic = null;
+
+let simAlpha = 1.0;
+let focusedId = null;
+let focusHopMap = new Map();
+let hoveredNode = null;
+let hoveredLink = null;
+let draggedNode = null;
+let pointerPos = { x: -9999, y: -9999 };
+let typedSeq = 0;
+let sparkSeq = 0;
+let lastLabelOverlaps = 0;
+let fpsValue = 60;
+let forcesPanel = null;
+let anchorTargets = null;
+let anchorTimer = 0;
+
+const cam = {
+  yaw: YAW_INIT,
+  pitch: PITCH_INIT,
+  D: D_INIT,
+  targetD: D_INIT,
+  velD: 0,
+  tx: 0,
+  ty: 0,
+  tz: 0,
+  vtx: 0,
+  vty: 0,
+  vtz: 0,
+  vYaw: 0,
+  vPitch: 0,
+  focusGoal: null,
+  resetAnim: null
+};
+
+const iconPathCache = new Map();
+function getIconPath(name) {
+  if (!name || !DATA || !DATA.icons) return null;
+  const d = DATA.icons[name];
+  if (!d) return null;
+  if (!iconPathCache.has(name)) {
+    try {
+      iconPathCache.set(name, new Path2D(d));
+    } catch (e) {
+      iconPathCache.set(name, null);
+    }
+  }
+  return iconPathCache.get(name);
+}
+
+function mulberry32(a) {
+  return function () {
+    let t = (a += 0x6D2B79F5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function hexToRgb(hex) {
+  if (!hex || typeof hex !== 'string') return { r: 210, g: 220, b: 240 };
+  let s = hex.trim().replace(/^#/, '');
+  if (s.length === 3) {
+    s = s[0] + s[0] + s[1] + s[1] + s[2] + s[2];
+  }
+  const num = parseInt(s, 16);
+  if (isNaN(num)) return { r: 210, g: 220, b: 240 };
+  return {
+    r: (num >> 16) & 255,
+    g: (num >> 8) & 255,
+    b: num & 255
+  };
+}
+
+function rgbaFromRgb(rgb, a, bright) {
+  const b = bright === undefined ? 1 : bright;
+  const r = Math.max(0, Math.min(255, Math.round(rgb.r * b)));
+  const g = Math.max(0, Math.min(255, Math.round(rgb.g * b)));
+  const bl = Math.max(0, Math.min(255, Math.round(rgb.b * b)));
+  const alpha = Math.max(0, Math.min(1, a));
+  return 'rgba(' + r + ',' + g + ',' + bl + ',' + alpha.toFixed(3) + ')';
+}
+
+function lerpRgb(c1, c2, t) {
+  const u = Math.max(0, Math.min(1, t));
+  return {
+    r: c1.r + (c2.r - c1.r) * u,
+    g: c1.g + (c2.g - c1.g) * u,
+    b: c1.b + (c2.b - c1.b) * u
+  };
+}
+
+function getDomainColor(domainId) {
+  if (DATA && Array.isArray(DATA.domains)) {
+    for (let i = 0; i < DATA.domains.length; i++) {
+      if (DATA.domains[i].id === domainId) return DATA.domains[i].color;
+    }
+  }
+  return (DATA && DATA.unsortedColor) || '#DCE3F5';
+}
+
+function registerNode(n) {
+  n.rgb = hexToRgb(n.color);
+  n.vx = n.vx || 0;
+  n.vy = n.vy || 0;
+  n.vz = n.vz || 0;
+  n.pinned = !!n.pinned;
+  n.sx = W / 2;
+  n.sy = H / 2;
+  n.rawSx = W / 2;
+  n.rawSy = H / 2;
+  n.depth = D_INIT;
+  n.s = REF_S;
+  n.sr = n.baseR;
+  n.sIcon = n.iconSize;
+  n.alpha = 1;
+  n.bright = STATUS_BRIGHT[n.status] || 1.0;
+  n.hoverShiftX = 0;
+  n.hoverShiftY = 0;
+  n.hoverGlow = 0;
+  n.focusMul = 1;
+  n.labelShown = false;
+  n.labelBox = null;
+  n.dragVx = 0;
+  n.dragVy = 0;
+  n.dragVz = 0;
+  nodes.push(n);
+  nodeMap.set(n.id, n);
+  return n;
+}
+
+function addLink(a, b, kind, label) {
+  if (!nodeMap.has(a) || !nodeMap.has(b)) return null;
+  for (let i = 0; i < links.length; i++) {
+    const l = links[i];
+    if (!l.cut && ((l.a === a && l.b === b) || (l.a === b && l.b === a))) {
+      return l;
+    }
+  }
+  const linkObj = {
+    a: a,
+    b: b,
+    kind: kind || 'struct',
+    label: label || '',
+    cut: false
+  };
+  links.push(linkObj);
+  return linkObj;
+}
+
+function initBgStars() {
+  const sRand = mulberry32(107);
+  bgStars = [];
+  for (let i = 0; i < 140; i++) {
+    bgStars.push({
+      u: sRand(),
+      v: sRand(),
+      r: 0.55 + sRand() * 1.15,
+      baseAlpha: 0.14 + sRand() * 0.42,
+      amp: 0.06 + sRand() * 0.18,
+      speed: 0.35 + sRand() * 0.85,
+      phase: sRand() * Math.PI * 2
+    });
+  }
+}
+
+/* ===== parts/21-physics.js ===== */
+function buildGraphFromData() {
+  const rand = mulberry32(7);
+  nodes = [];
+  nodeMap.clear();
+  links = [];
+
+  const constellations = (DATA && DATA.constellations) || [];
+  const quadSigns = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
+
+  for (let ci = 0; ci < constellations.length; ci++) {
+    const c = constellations[ci];
+    const q = quadSigns[ci % 4];
+    const zSt = STATUS_Z[c.status] !== undefined ? STATUS_Z[c.status] : 0;
+    const cx = q[0] * (380 + rand() * 80);
+    const cy = q[1] * (380 + rand() * 80);
+    const cz = zSt;
+    const cColor = getDomainColor(c.domain);
+    const centerId = 'item:' + c.id;
+
+    registerNode({
+      id: centerId,
+      kind: 'center',
+      constellationId: c.id,
+      domain: c.domain,
+      status: c.status || 'explore',
+      zStatus: zSt,
+      label: c.title,
+      icon: c.icon,
+      color: cColor,
+      baseR: 22,
+      iconSize: 20,
+      x: cx,
+      y: cy,
+      z: cz
+    });
+
+    const includes = c.includes || [];
+    const incIcons = c.incIcons || [];
+    const total = includes.length;
+    const rotOffset = rand() * Math.PI * 2;
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+
+    for (let idx = 0; idx < total; idx++) {
+      const yUnit = total > 1 ? 1 - (idx / (total - 1)) * 2 : 0;
+      const radXY = Math.sqrt(Math.max(0, 1 - yUnit * yUnit));
+      const theta = goldenAngle * idx + rotOffset + (rand() - 0.5) * 0.25;
+      const shellR = 90 + rand() * 60;
+      const mx = cx + Math.cos(theta) * radXY * shellR;
+      const my = cy + Math.sin(theta) * radXY * shellR;
+      const mz = cz + yUnit * shellR;
+      const memId = 'inc:' + c.id + ':' + idx;
+
+      registerNode({
+        id: memId,
+        kind: 'member',
+        parentId: centerId,
+        constellationId: c.id,
+        domain: c.domain,
+        status: c.status || 'explore',
+        label: includes[idx],
+        icon: incIcons[idx] || c.icon,
+        color: cColor,
+        baseR: 11,
+        iconSize: 12,
+        x: mx,
+        y: my,
+        z: mz
+      });
+
+      addLink(centerId, memId, 'struct', '');
+    }
+  }
+
+  const ideas = (DATA && DATA.ideas) || [];
+  const unsortedCol = (DATA && DATA.unsortedColor) || '#E4EAF6';
+  for (let i = 0; i < ideas.length; i++) {
+    const idea = ideas[i];
+    const ix = (rand() - 0.5) * 110;
+    const iy = (rand() - 0.5) * 110;
+    const iz = -60 + rand() * 120;
+    const ideaId = String(idea.id).startsWith('idea:') ? String(idea.id) : 'idea:' + idea.id;
+
+    registerNode({
+      id: ideaId,
+      kind: 'idea',
+      status: 'explore',
+      label: idea.text,
+      icon: idea.icon || 'bulb',
+      color: unsortedCol,
+      baseR: 12,
+      iconSize: 12,
+      x: ix,
+      y: iy,
+      z: iz
+    });
+  }
+
+  if (DATA && DATA.expansions) {
+    const expKeys = Object.keys(DATA.expansions);
+    for (let k = 0; k < expKeys.length; k++) {
+      const parentId = expKeys[k];
+      const parentNode = nodeMap.get(parentId);
+      if (!parentNode) continue;
+      const list = DATA.expansions[parentId] || [];
+      for (let j = 0; j < list.length; j++) {
+        const exp = list[j];
+        const possId = String(exp.id).startsWith('poss:') ? String(exp.id) : 'poss:' + exp.id;
+        if (nodeMap.has(possId)) continue;
+        const ang = (j / Math.max(1, list.length)) * Math.PI * 2 + rand() * 0.5;
+        const dist = 110 + rand() * 40;
+        const lensIcon = (DATA.lensIcons && DATA.lensIcons[exp.lens]) || 'spark';
+        registerNode({
+          id: possId,
+          kind: 'poss',
+          parentId: parentId,
+          status: parentNode.status || 'explore',
+          label: exp.text,
+          lens: exp.lens || '',
+          icon: lensIcon,
+          color: parentNode.color,
+          baseR: 11,
+          iconSize: 12,
+          x: parentNode.x + Math.cos(ang) * dist,
+          y: parentNode.y + Math.sin(ang) * dist,
+          z: parentNode.z + (rand() - 0.5) * 60
+        });
+        addLink(parentId, possId, 'poss', exp.lens || '');
+      }
+    }
+  }
+
+  const presetLinks = (DATA && DATA.links) || [];
+  for (let i = 0; i < presetLinks.length; i++) {
+    const l = presetLinks[i];
+    addLink(l.a, l.b, l.kind || 'suggest', l.label || '');
+  }
+}
+
+function isNodeFree(n) {
+  return !n.pinned && n !== draggedNode;
+}
+
+function stepPhysicsTick() {
+  if (simAlpha < 0.004) {
+    simAlpha = 0;
+    return;
+  }
+  simAlpha += (0 - simAlpha) * 0.0228;
+  if (simAlpha < 0.004) {
+    simAlpha = 0;
+    for (let i = 0; i < nodes.length; i++) {
+      nodes[i].vx = 0;
+      nodes[i].vy = 0;
+      nodes[i].vz = 0;
+    }
+    return;
+  }
+
+  const alpha = simAlpha;
+  const ASPECT_Y = Math.pow(Math.min(2, Math.max(1, window.innerWidth / Math.max(1, window.innerHeight))), 2.2);
+  const Mrepel = 0.2 + 2.4 * forces.repel;
+  const Mdist = 0.4 + 1.6 * forces.distance;
+  const Mlink = 2.0 * forces.link;
+  const Mcenter = 0.05 * forces.center;
+  const N = nodes.length;
+
+  for (let i = 0; i < N; i++) {
+    const a = nodes[i];
+    if (isNodeFree(a)) {
+      const mul = a.kind === 'center' ? 3 : 1;
+      const cf = Mcenter * alpha * mul;
+      a.vx += -a.x * cf;
+      // Claude fix to the written spec: the window is wider than tall, so pull y in harder (same idea as the 2D layout's aspect term);
+      // without it the picture is taller than the window long before it uses the width.
+      a.vy += -a.y * cf * ASPECT_Y;
+      a.vz += -a.z * cf;
+
+      if (a.kind === 'center' && a.zStatus !== undefined) {
+        a.vz += (a.zStatus - a.z) * 0.02;
+      }
+      if (a.kind === 'member' && a.parentId) {
+        const p = nodeMap.get(a.parentId);
+        if (p) {
+          a.vx += (p.x - a.x) * 0.008 * alpha;
+          a.vy += (p.y - a.y) * 0.008 * alpha;
+          a.vz += (p.z - a.z) * 0.008 * alpha;
+        }
+      }
+      if (anchorTimer > 0 && anchorTargets && anchorTargets.has(a.id)) {
+        const t = anchorTargets.get(a.id);
+        a.vx += (t.x - a.x) * 0.085;
+        a.vy += (t.y - a.y) * 0.085;
+        a.vz += (t.z - a.z) * 0.085;
+      }
+    }
+  }
+
+  for (let i = 0; i < N; i++) {
+    const a = nodes[i];
+    const freeA = isNodeFree(a);
+    const chargeA = a.kind === 'center' ? -600 : -220;   // Claude fix: same charges as the 2D layout
+    for (let j = i + 1; j < N; j++) {
+      const b = nodes[j];
+      const freeB = isNodeFree(b);
+      if (!freeA && !freeB) continue;
+      let dx = b.x - a.x;
+      let dy = b.y - a.y;
+      let dz = b.z - a.z;
+      const d2 = dx * dx + dy * dy + dz * dz;
+      const d = Math.sqrt(d2) || 0.001;
+      if (d2 > 520 * 520) continue;   // Claude fix: the 2D layout cuts the push off at 520 units; without it every node pushes every other one
+      const denom = Math.max(d2, 400);
+      const ux = dx / d;
+      const uy = dy / d;
+      const uz = dz / d;
+
+      const chargeB = b.kind === 'center' ? -600 : -220;
+      // Claude fix to the written spec: the 2D layout multiplies the raw offset (dx), so the push falls off as 1/d, not 1/d^2.
+      // The spec said 1/d^2 with a unit vector, which is ~100x weaker at these distances and made the repel slider do nothing.
+      if (freeA) {
+        const fa = (chargeB * Mrepel * alpha) / denom;
+        a.vx += dx * fa;
+        a.vy += dy * fa;
+        a.vz += dz * fa;
+      }
+      if (freeB) {
+        const fb = (chargeA * Mrepel * alpha) / denom;
+        b.vx -= dx * fb;
+        b.vy -= dy * fb;
+        b.vz -= dz * fb;
+      }
+    }
+  }
+
+  for (let i = 0; i < links.length; i++) {
+    const l = links[i];
+    if (l.cut) continue;
+    const a = nodeMap.get(l.a);
+    const b = nodeMap.get(l.b);
+    if (!a || !b) continue;
+    const lp = LINK_PARAMS[l.kind] || LINK_PARAMS.struct;
+    const L = lp.L0 * Mdist;
+    const k = lp.k0 * Mlink;
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const dz = b.z - a.z;
+    const d = Math.sqrt(dx * dx + dy * dy + dz * dz) || 0.001;
+    const f = ((d - L) / d) * k * alpha * 0.5;
+    if (isNodeFree(a)) {
+      a.vx += dx * f;
+      a.vy += dy * f;
+      a.vz += dz * f;
+    }
+    if (isNodeFree(b)) {
+      b.vx -= dx * f;
+      b.vy -= dy * f;
+      b.vz -= dz * f;
+    }
+  }
+
+  for (let i = 0; i < N; i++) {
+    const n = nodes[i];
+    if (!isNodeFree(n)) continue;
+    n.vx *= 0.42;
+    n.vy *= 0.42;
+    n.vz *= 0.42;
+    n.x += n.vx;
+    n.y += n.vy;
+    n.z += n.vz;
+  }
+
+  for (let i = 0; i < N; i++) {
+    const a = nodes[i];
+    const freeA = isNodeFree(a);
+    const ra = (a.kind === 'center' ? 22 : 11) * 1.4;
+    for (let j = i + 1; j < N; j++) {
+      const b = nodes[j];
+      const freeB = isNodeFree(b);
+      if (!freeA && !freeB) continue;
+      const rb = (b.kind === 'center' ? 22 : 11) * 1.4;
+      const minDist = ra + rb + 18;
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const dz = b.z - a.z;
+      const d2 = dx * dx + dy * dy + dz * dz;
+      if (d2 < minDist * minDist) {
+        const d = Math.sqrt(d2) || 0.001;
+        const push = ((minDist - d) / d) * 0.7 * (freeA && freeB ? 0.5 : 1.0);
+        if (freeA) {
+          a.x -= dx * push;
+          a.y -= dy * push;
+          a.z -= dz * push;
+        }
+        if (freeB) {
+          b.x += dx * push;
+          b.y += dy * push;
+          b.z += dz * push;
+        }
+      }
+    }
+  }
+}
+
+/* ===== parts/22-camera.js ===== */
+function prewarmPhysics(ticks) {
+  simAlpha = 1.0;
+  const count = ticks || 300;
+  for (let i = 0; i < count; i++) {
+    stepPhysicsTick();
+  }
+  simAlpha = 0;
+  for (let i = 0; i < nodes.length; i++) {
+    nodes[i].vx = 0;
+    nodes[i].vy = 0;
+    nodes[i].vz = 0;
+  }
+}
+
+function stepSpring1D(val, vel, target, omega, zeta, dt) {
+  const step = Math.min(dt, 0.033);
+  // Claude fix to the written spec: with omega 180 and damping 0.85 the explicit integrator diverges once a sub-step is longer than ~6.5 ms,
+  // so a frame longer than ~26 ms threw the dragged ball to infinity. Use fixed ~4 ms sub-steps like the 2D version (240 Hz).
+  const sub = Math.max(1, Math.ceil(step / (1 / 240)));
+  const h = step / sub;
+  let x = val;
+  let v = vel;
+  for (let i = 0; i < sub; i++) {
+    const acc = -omega * omega * (x - target) - 2 * zeta * omega * v;
+    v += acc * h;
+    x += v * h;
+  }
+  return { x: x, v: v };
+}
+
+function projectWorldToScreen(wx, wy, wz) {
+  const rx = wx - cam.tx;
+  const ry = wy - cam.ty;
+  const rz = wz - cam.tz;
+
+  const cosY = Math.cos(cam.yaw);
+  const sinY = Math.sin(cam.yaw);
+  const x1 = rx * cosY + rz * sinY;
+  const y1 = ry;
+  const z1 = -rx * sinY + rz * cosY;
+
+  const cosP = Math.cos(cam.pitch);
+  const sinP = Math.sin(cam.pitch);
+  const xp = x1;
+  const yp = y1 * cosP - z1 * sinP;
+  const zp = y1 * sinP + z1 * cosP;
+
+  const depth = cam.D + zp;
+  const effDepth = Math.max(80, depth);
+  const s = F_PERSP / effDepth;
+  const sx = W * 0.5 + xp * s;
+  const sy = H * 0.5 - 20 + yp * s;
+
+  return {
+    sx: sx,
+    sy: sy,
+    depth: depth,
+    effDepth: effDepth,
+    s: s,
+    xp: xp,
+    yp: yp,
+    zp: zp
+  };
+}
+
+function unprojectScreenToWorld(sx, sy, depth) {
+  const effDepth = Math.max(80, depth);
+  const s = F_PERSP / effDepth;
+  const xp = (sx - W * 0.5) / s;
+  const yp = (sy - (H * 0.5 - 20)) / s;
+  const zp = depth - cam.D;
+
+  const cosP = Math.cos(cam.pitch);
+  const sinP = Math.sin(cam.pitch);
+  const x1 = xp;
+  const y1 = yp * cosP + zp * sinP;
+  const z1 = -yp * sinP + zp * cosP;
+
+  const cosY = Math.cos(cam.yaw);
+  const sinY = Math.sin(cam.yaw);
+  const rx = x1 * cosY - z1 * sinY;
+  const ry = y1;
+  const rz = x1 * sinY + z1 * cosY;
+
+  return {
+    x: rx + cam.tx,
+    y: ry + cam.ty,
+    z: rz + cam.tz
+  };
+}
+
+function recomputeFocusHops() {
+  focusHopMap.clear();
+  if (!focusedId || !nodeMap.has(focusedId)) return;
+  focusHopMap.set(focusedId, 0);
+  const queue = [{ id: focusedId, hops: 0 }];
+  while (queue.length > 0) {
+    const cur = queue.shift();
+    if (cur.hops >= 2) continue;
+    for (let i = 0; i < links.length; i++) {
+      const l = links[i];
+      if (l.cut) continue;
+      let nextId = null;
+      if (l.a === cur.id) nextId = l.b;
+      else if (l.b === cur.id) nextId = l.a;
+      if (nextId && !focusHopMap.has(nextId)) {
+        focusHopMap.set(nextId, cur.hops + 1);
+        queue.push({ id: nextId, hops: cur.hops + 1 });
+      }
+    }
+  }
+}
+
+function setFocusNode(nodeId) {
+  if (!nodeId || !nodeMap.has(nodeId)) {
+    focusedId = null;
+    focusHopMap.clear();
+    cam.focusGoal = null;
+    return;
+  }
+  focusedId = nodeId;
+  recomputeFocusHops();
+
+  const centerNode = nodeMap.get(nodeId);
+  let sumX = centerNode.x * 2;
+  let sumY = centerNode.y * 2;
+  let sumZ = centerNode.z * 2;
+  let weight = 2;
+
+  for (let i = 0; i < links.length; i++) {
+    const l = links[i];
+    if (l.cut) continue;
+    let nbId = null;
+    if (l.a === nodeId) nbId = l.b;
+    else if (l.b === nodeId) nbId = l.a;
+    if (nbId && nodeMap.has(nbId)) {
+      const nb = nodeMap.get(nbId);
+      sumX += nb.x;
+      sumY += nb.y;
+      sumZ += nb.z;
+      weight += 1;
+    }
+  }
+
+  const gx = sumX / weight;
+  const gy = sumY / weight;
+  const gz = sumZ / weight;
+
+  const desiredYaw = Math.atan2(-centerNode.x, -centerNode.z || 400);
+  let dYaw = desiredYaw - cam.yaw;
+  while (dYaw > Math.PI) dYaw -= Math.PI * 2;
+  while (dYaw < -Math.PI) dYaw += Math.PI * 2;
+  dYaw = Math.max(-0.25, Math.min(0.25, dYaw * 0.35));
+
+  const desiredPitch = Math.atan2(centerNode.y, 600);
+  let dPitch = Math.max(-0.25, Math.min(0.25, (desiredPitch - cam.pitch) * 0.35));
+
+  cam.resetAnim = null;
+  cam.focusGoal = {
+    tx: gx,
+    ty: gy,
+    tz: gz,
+    yaw: cam.yaw + dYaw,
+    pitch: Math.max(-1.2, Math.min(1.2, cam.pitch + dPitch)),
+    vYaw: 0,
+    vPitch: 0
+  };
+}
+
+function triggerCameraReset() {
+  focusedId = null;
+  focusHopMap.clear();
+  cam.focusGoal = null;
+  cam.vYaw = 0;
+  cam.vPitch = 0;
+  cam.targetD = D_INIT;
+  cam.resetAnim = {
+    elapsed: 0
+  };
+}
+
+function spawnSparkBetweenNodes(spark) {
+  const pos = unprojectScreenToWorld(spark.x, spark.y, spark.depth);
+  sparkSeq += 1;
+  const id = 'poss:spark-' + sparkSeq;
+  const pairKey1 = spark.a + '|' + spark.b;
+  const pairKey2 = spark.b + '|' + spark.a;
+  let text = (DATA && DATA.sparkPlaceholder) || '两者之间的新可能';
+  if (DATA && DATA.sparks) {
+    if (DATA.sparks[pairKey1]) text = DATA.sparks[pairKey1];
+    else if (DATA.sparks[pairKey2]) text = DATA.sparks[pairKey2];
+  }
+  const lens = (DATA && DATA.sparkLens) || '两者之间';
+  const iconName = (DATA && DATA.lensIcons && DATA.lensIcons[lens]) || 'spark';
+  const nodeA = nodeMap.get(spark.a);
+  const col = (nodeA && nodeA.color) || ((DATA && DATA.unsortedColor) || '#E4EAF6');
+
+  registerNode({
+    id: id,
+    kind: 'poss',
+    parentId: spark.a,
+    status: 'explore',
+    label: text,
+    lens: lens,
+    icon: iconName,
+    color: col,
+    baseR: 11,
+    iconSize: 12,
+    x: pos.x,
+    y: pos.y,
+    z: pos.z
+  });
+
+  addLink(spark.a, id, 'poss', lens);
+  addLink(spark.b, id, 'poss', lens);
+  simAlpha = Math.max(simAlpha, 0.35);
+  if (focusedId) recomputeFocusHops();
+}
+
+function updateProjections(dt) {
+  const step = Math.min(dt || 0.016, 0.05);
+  for (let i = 0; i < nodes.length; i++) {
+    const n = nodes[i];
+    const p = projectWorldToScreen(n.x, n.y, n.z);
+    n.rawSx = p.sx;
+    n.rawSy = p.sy;
+    n.depth = p.depth;
+    n.s = p.s;
+
+    const ratio = Math.max(0.55, Math.min(1.6, p.s / REF_S));
+    n.sr = n.baseR * ratio;
+    n.sIcon = n.iconSize * ratio;
+
+    let targetShiftX = 0;
+    let targetShiftY = 0;
+    let targetHover = 0;
+    if (n !== draggedNode && pointerPos.x > -1000) {
+      const dx = pointerPos.x - n.rawSx;
+      const dy = pointerPos.y - n.rawSy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const radius = n.sr + 48;
+      if (dist < radius && dist > 0.01) {
+        const factor = Math.pow(1 - dist / radius, 1.5);
+        const shift = Math.min(7, factor * 7);
+        targetShiftX = (dx / dist) * shift;
+        targetShiftY = (dy / dist) * shift;
+        targetHover = factor;
+      }
+    }
+    const blend = Math.min(1, step * 14);
+    n.hoverShiftX += (targetShiftX - n.hoverShiftX) * blend;
+    n.hoverShiftY += (targetShiftY - n.hoverShiftY) * blend;
+    n.hoverGlow += (targetHover - n.hoverGlow) * blend;
+
+    n.sx = n.rawSx + n.hoverShiftX;
+    n.sy = n.rawSy + n.hoverShiftY;
+
+    const fog = n.depth <= cam.D ? 1.0 : Math.max(0.35, 1.0 - ((n.depth - cam.D) / 500) * 0.65);
+    const targetFocusMul = !focusedId || focusHopMap.has(n.id) ? 1.0 : 0.16;
+    n.focusMul += (targetFocusMul - n.focusMul) * Math.min(1, step * 10);
+    n.fog = fog;
+  }
+}
+
+/* ===== parts/23-step.js ===== */
+function addRipple(x, y, maxR, dur, startAlpha, color) {
+  ripples.push({
+    x: x,
+    y: y,
+    maxR: maxR || 300,
+    dur: dur || 1.45,
+    elapsed: 0,
+    startAlpha: startAlpha !== undefined ? startAlpha : 0.22,
+    color: color || '#DCE6FF'
+  });
+}
+
+function stepCameraAndEffects(dt) {
+  const step = Math.min(dt || 0.016, 0.05);
+
+  if (anchorTimer > 0) {
+    anchorTimer = Math.max(0, anchorTimer - step);
+    simAlpha = Math.max(simAlpha, 0.35);
+    if (anchorTimer <= 0) {
+      anchorTargets = null;
+    }
+  }
+
+  const spD = stepSpring1D(cam.D, cam.velD, cam.targetD, 16, 1.0, step);
+  cam.D = spD.x;
+  cam.velD = spD.v;
+
+  if (cam.resetAnim) {
+    cam.resetAnim.elapsed += step;
+    const w = 10.5;
+    const z = 0.92;
+    const sx = stepSpring1D(cam.tx, cam.vtx, 0, w, z, step);
+    const sy = stepSpring1D(cam.ty, cam.vty, 0, w, z, step);
+    const sz = stepSpring1D(cam.tz, cam.vtz, 0, w, z, step);
+    const syaw = stepSpring1D(cam.yaw, cam.vYaw, YAW_INIT, w, z, step);
+    const spitch = stepSpring1D(cam.pitch, cam.vPitch, PITCH_INIT, w, z, step);
+    cam.tx = sx.x; cam.vtx = sx.v;
+    cam.ty = sy.x; cam.vty = sy.v;
+    cam.tz = sz.x; cam.vtz = sz.v;
+    cam.yaw = syaw.x; cam.vYaw = syaw.v;
+    cam.pitch = Math.max(-1.2, Math.min(1.2, spitch.x));
+    cam.vPitch = spitch.v;
+    if (cam.resetAnim.elapsed > 0.75 &&
+        Math.abs(cam.yaw - YAW_INIT) < 0.001 &&
+        Math.abs(cam.pitch - PITCH_INIT) < 0.001 &&
+        Math.abs(cam.tx) < 0.2 && Math.abs(cam.ty) < 0.2 && Math.abs(cam.tz) < 0.2) {
+      cam.yaw = YAW_INIT;
+      cam.pitch = PITCH_INIT;
+      cam.tx = 0; cam.ty = 0; cam.tz = 0;
+      cam.vtx = 0; cam.vty = 0; cam.vtz = 0;
+      cam.vYaw = 0; cam.vPitch = 0;
+      cam.resetAnim = null;
+    }
+  } else if (cam.focusGoal) {
+    const fg = cam.focusGoal;
+    const sx = stepSpring1D(cam.tx, cam.vtx, fg.tx, 4, 1.0, step);
+    const sy = stepSpring1D(cam.ty, cam.vty, fg.ty, 4, 1.0, step);
+    const sz = stepSpring1D(cam.tz, cam.vtz, fg.tz, 4, 1.0, step);
+    const syaw = stepSpring1D(cam.yaw, fg.vYaw, fg.yaw, 4, 1.0, step);
+    const spitch = stepSpring1D(cam.pitch, fg.vPitch, fg.pitch, 4, 1.0, step);
+    cam.tx = sx.x; cam.vtx = sx.v;
+    cam.ty = sy.x; cam.vty = sy.v;
+    cam.tz = sz.x; cam.vtz = sz.v;
+    cam.yaw = syaw.x; fg.vYaw = syaw.v;
+    cam.pitch = Math.max(-1.2, Math.min(1.2, spitch.x));
+    fg.vPitch = spitch.v;
+  } else {
+    if (Math.abs(cam.vYaw) > 0.00005 || Math.abs(cam.vPitch) > 0.00005) {
+      cam.yaw += cam.vYaw * step;
+      cam.pitch = Math.max(-1.2, Math.min(1.2, cam.pitch + cam.vPitch * step));
+      const rotDecay = Math.exp(-4 * step);
+      cam.vYaw *= rotDecay;
+      cam.vPitch *= rotDecay;
+    } else {
+      cam.vYaw = 0;
+      cam.vPitch = 0;
+    }
+
+    if (Math.abs(cam.vtx) > 0.01 || Math.abs(cam.vty) > 0.01 || Math.abs(cam.vtz) > 0.01) {
+      cam.tx += cam.vtx * step;
+      cam.ty += cam.vty * step;
+      cam.tz += cam.vtz * step;
+      const panDecay = Math.exp(-6 * step);
+      cam.vtx *= panDecay;
+      cam.vty *= panDecay;
+      cam.vtz *= panDecay;
+    } else {
+      cam.vtx = 0;
+      cam.vty = 0;
+      cam.vtz = 0;
+    }
+  }
+
+  if (draggedNode) {
+    const worldGoal = unprojectScreenToWorld(pointerPos.x, pointerPos.y, draggedNode.depth);
+    const sx = stepSpring1D(draggedNode.x, draggedNode.dragVx, worldGoal.x, 180, 0.85, step);
+    const sy = stepSpring1D(draggedNode.y, draggedNode.dragVy, worldGoal.y, 180, 0.85, step);
+    const sz = stepSpring1D(draggedNode.z, draggedNode.dragVz, worldGoal.z, 180, 0.85, step);
+    draggedNode.x = sx.x; draggedNode.dragVx = sx.v;
+    draggedNode.y = sy.x; draggedNode.dragVy = sy.v;
+    draggedNode.z = sz.x; draggedNode.dragVz = sz.v;
+    simAlpha = Math.max(simAlpha, 0.32);
+  }
+
+  if (elastic && elastic.link) {
+    const na = nodeMap.get(elastic.link.a);
+    const nb = nodeMap.get(elastic.link.b);
+    if (!na || !nb || elastic.link.cut) {
+      elastic = null;
+    } else {
+      const mx = (na.sx + nb.sx) * 0.5;
+      const my = (na.sy + nb.sy) * 0.5;
+      if (elastic.active) {
+        const dx = pointerPos.x - mx;
+        const dy = pointerPos.y - my;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        const s = 125 * Math.tanh(d / 125);
+        const t = s / 125;
+        const tx = d > 0.001 ? mx + (dx / d) * s : mx;
+        const ty = d > 0.001 ? my + (dy / d) * s : my;
+        const spX = stepSpring1D(elastic.px, elastic.vx, tx, 26, 0.5, step);
+        const spY = stepSpring1D(elastic.py, elastic.vy, ty, 26, 0.5, step);
+        elastic.px = spX.x; elastic.vx = spX.v;
+        elastic.py = spY.x; elastic.vy = spY.v;
+        elastic.tension = t;
+        if (d > 1) {
+          elastic.dirX = dx / d;
+          elastic.dirY = dy / d;
+        }
+      } else if (elastic.rebounding) {
+        elastic.elapsed += step;
+        const spX = stepSpring1D(elastic.px, elastic.vx, mx, 20, 0.2, step);
+        const spY = stepSpring1D(elastic.py, elastic.vy, my, 20, 0.2, step);
+        elastic.px = spX.x; elastic.vx = spX.v;
+        elastic.py = spY.x; elastic.vy = spY.v;
+        const dist = Math.hypot(elastic.px - mx, elastic.py - my);
+        elastic.tension = Math.min(1, dist / 125);
+        if (elastic.elapsed > 1.1 || (dist < 0.75 && Math.hypot(elastic.vx, elastic.vy) < 4)) {
+          elastic = null;
+        }
+      }
+    }
+  }
+
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const sp = sparks[i];
+    sp.elapsed += step;
+    const u = Math.min(1, sp.elapsed / sp.dur);
+    const ease = 1 - Math.pow(1 - u, 3);
+    sp.x = sp.startX + (sp.tx - sp.startX) * ease;
+    sp.y = sp.startY + (sp.ty - sp.startY) * ease;
+    sp.trail.push({ x: sp.x, y: sp.y });
+    if (sp.trail.length > 10) sp.trail.shift();
+    if (u >= 1) {
+      spawnSparkBetweenNodes(sp);
+      sparks.splice(i, 1);
+    }
+  }
+
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    ripples[i].elapsed += step;
+    if (ripples[i].elapsed >= ripples[i].dur) {
+      ripples.splice(i, 1);
+    }
+  }
+}
+
+function addNewIdeaFromInput(rawText) {
+  const text = (rawText || '').trim();
+  if (!text) return null;
+
+  let bestNode = null;
+  let bestScore = 0;
+  for (let i = 0; i < nodes.length; i++) {
+    const n = nodes[i];
+    if (!n.label) continue;
+    let score = 0;
+    for (let c = 0; c < text.length; c++) {
+      const ch = text[c];
+      if (ch.trim() && n.label.indexOf(ch) !== -1) {
+        score += 1;
+      }
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      bestNode = n;
+    }
+  }
+
+  typedSeq += 1;
+  const ideaId = 'idea:typed-' + typedSeq;
+  const unsortedCol = (DATA && DATA.unsortedColor) || '#E4EAF6';
+  let x = (Math.random() - 0.5) * 120;
+  let y = (Math.random() - 0.5) * 90;
+  let z = -90;
+
+  if (bestNode && bestScore > 0) {
+    const ang = Math.random() * Math.PI * 2;
+    x = bestNode.x + Math.cos(ang) * 95;
+    y = bestNode.y + Math.sin(ang) * 95;
+    z = bestNode.z + (Math.random() - 0.5) * 35;
+  }
+
+  const newIdea = registerNode({
+    id: ideaId,
+    kind: 'idea',
+    status: 'explore',
+    label: text,
+    icon: 'bulb',
+    color: unsortedCol,
+    baseR: 12,
+    iconSize: 12,
+    x: x,
+    y: y,
+    z: z
+  });
+
+  if (bestNode && bestScore > 0) {
+    addLink(ideaId, bestNode.id, 'suggest', '有关联吗？');
+  }
+
+  const placeholders = (DATA && DATA.placeholder) || [
+    { lens: '可以变成', text: '做成一个小工具试试' },
+    { lens: '反过来想', text: '如果不这样做会怎样' },
+    { lens: '下一步', text: '写下第一个具体例子' }
+  ];
+
+  const count = Math.min(3, placeholders.length);
+  for (let i = 0; i < count; i++) {
+    const ph = placeholders[i];
+    const possId = 'poss:typed-' + typedSeq + '-' + (i + 1);
+    const ang = (i / Math.max(1, count)) * Math.PI * 2 + 0.35;
+    const dist = 115;
+    const lensIcon = (DATA && DATA.lensIcons && DATA.lensIcons[ph.lens]) || 'spark';
+    registerNode({
+      id: possId,
+      kind: 'poss',
+      parentId: ideaId,
+      status: 'explore',
+      label: ph.text,
+      lens: ph.lens || '',
+      icon: lensIcon,
+      color: unsortedCol,
+      baseR: 11,
+      iconSize: 12,
+      x: x + Math.cos(ang) * dist,
+      y: y + Math.sin(ang) * dist,
+      z: z + (i - 1) * 24
+    });
+    addLink(ideaId, possId, 'poss', ph.lens || '');
+  }
+
+  simAlpha = Math.max(simAlpha, 0.45);
+  updateProjections(0.016);
+  addRipple(newIdea.sx, newIdea.sy, 180, 1.1, 0.22, unsortedCol);
+  if (focusedId) recomputeFocusHops();
+  return newIdea;
+}
+
+/* ===== parts/30-render.js ===== */
+function boxesOverlap(a, b) {
+  return a.x1 < b.x2 && a.x2 > b.x1 && a.y1 < b.y2 && a.y2 > b.y1;
+}
+
+function getNodeLabelPriority(n) {
+  if (focusedId && n.id === focusedId) return 4;
+  if (n.kind === 'center') return 3;
+  if (n.kind === 'idea') return 2;
+  return 1;
+}
+
+function computeLabelLayout() {
+  const ordered = nodes.slice().sort(function (a, b) {
+    const pa = getNodeLabelPriority(a);
+    const pb = getNodeLabelPriority(b);
+    if (pa !== pb) return pb - pa;
+    return a.depth - b.depth;
+  });
+
+  const placedBoxes = [];
+  for (let i = 0; i < ordered.length; i++) {
+    const n = ordered[i];
+    n.labelShown = false;
+    n.labelBox = null;
+    if (!n.label || n.depth < 85) continue;
+
+    const baseFont = n.kind === 'center' ? 18 : 13;
+    const fSize = Math.max(11, Math.min(18, baseFont * Math.sqrt(n.s / REF_S)));
+    const weight = n.kind === 'center' ? '600' : '400';
+    ctx.font = weight + ' ' + fSize.toFixed(1) + 'px -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif';
+    const tw = ctx.measureText(n.label).width;
+    const lx = n.sx;
+    const ly = n.sy + n.sr + 6 + fSize * 0.52;
+    const padX = 4;
+    const padY = 2;
+    const box = {
+      x1: lx - tw * 0.5 - padX,
+      y1: ly - fSize * 0.55 - padY,
+      x2: lx + tw * 0.5 + padX,
+      y2: ly + fSize * 0.55 + padY
+    };
+
+    if (box.x1 < 6 || box.x2 > W - 6 || box.y1 < 6 || box.y2 > H - 6) {
+      continue;
+    }
+
+    let collided = false;
+    for (let j = 0; j < placedBoxes.length; j++) {
+      if (boxesOverlap(box, placedBoxes[j])) {
+        collided = true;
+        break;
+      }
+    }
+
+    if (!collided) {
+      n.labelShown = true;
+      n.labelBox = box;
+      n.labelX = lx;
+      n.labelY = ly;
+      n.labelFontSize = fSize;
+      n.labelWeight = weight;
+      placedBoxes.push(box);
+    }
+  }
+
+  lastLabelOverlaps = countLabelOverlaps();
+  return placedBoxes;
+}
+
+function countLabelOverlaps() {
+  const shown = [];
+  for (let i = 0; i < nodes.length; i++) {
+    if (nodes[i].labelShown && nodes[i].labelBox) {
+      shown.push(nodes[i].labelBox);
+    }
+  }
+  let count = 0;
+  for (let i = 0; i < shown.length; i++) {
+    for (let j = i + 1; j < shown.length; j++) {
+      if (boxesOverlap(shown[i], shown[j])) {
+        count += 1;
+      }
+    }
+  }
+  return count;
+}
+
+function drawBackground(timeSec) {
+  const cx = W * 0.5;
+  const cy = H * 0.5;
+  const maxR = Math.hypot(W, H) * 0.65;
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR);
+  grad.addColorStop(0, '#0A0D18');
+  grad.addColorStop(1, '#05060B');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  for (let i = 0; i < bgStars.length; i++) {
+    const st = bgStars[i];
+    const a = Math.max(0.04, Math.min(0.85, st.baseAlpha + Math.sin(timeSec * st.speed + st.phase) * st.amp));
+    ctx.fillStyle = 'rgba(218, 228, 252, ' + a.toFixed(3) + ')';
+    ctx.beginPath();
+    ctx.arc(st.u * W, st.v * H, st.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawLinks(placedBoxes) {
+  const activeLinks = [];
+  for (let i = 0; i < links.length; i++) {
+    const l = links[i];
+    if (l.cut) continue;
+    const a = nodeMap.get(l.a);
+    const b = nodeMap.get(l.b);
+    if (!a || !b) continue;
+    activeLinks.push({
+      link: l,
+      a: a,
+      b: b,
+      midDepth: (a.depth + b.depth) * 0.5
+    });
+  }
+
+  activeLinks.sort(function (x, y) {
+    return y.midDepth - x.midDepth;
+  });
+
+  const warmRgb = { r: 255, g: 168, b: 96 };
+
+  for (let i = 0; i < activeLinks.length; i++) {
+    const item = activeLinks[i];
+    const l = item.link;
+    const a = item.a;
+    const b = item.b;
+    const lp = LINK_PARAMS[l.kind] || LINK_PARAMS.struct;
+    const avgS = (a.s + b.s) * 0.5;
+    const wScale = Math.max(0.5, Math.min(1.6, avgS / REF_S));
+    const fog = (a.fog + b.fog) * 0.5;
+    const focusMul = Math.min(a.focusMul, b.focusMul);
+    const isHovered = hoveredLink === l;
+
+    ctx.save();
+    if (elastic && elastic.link === l) {
+      const t = Math.max(0, Math.min(1, elastic.tension || 0));
+      const baseRgb = lerpRgb(a.rgb, b.rgb, 0.5);
+      const colRgb = lerpRgb(baseRgb, warmRgb, t * 0.88);
+      const lw = 2.2 * (1 - t * 0.55) * wScale;
+      ctx.lineWidth = Math.max(0.6, lw);
+      ctx.strokeStyle = rgbaFromRgb(colRgb, Math.min(0.95, (0.58 + t * 0.38) * fog * focusMul), 1.15);
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(a.sx, a.sy);
+      ctx.lineTo(elastic.px, elastic.py);
+      ctx.lineTo(b.sx, b.sy);
+      ctx.stroke();
+
+      ctx.fillStyle = rgbaFromRgb(colRgb, 0.85 * fog, 1.25);
+      ctx.beginPath();
+      ctx.arc(elastic.px, elastic.py, 2.6, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      const baseAlpha = l.kind === 'struct' ? 0.34 : l.kind === 'confirmed' ? 0.42 : 0.32;
+      const alpha = Math.min(0.92, (baseAlpha + (isHovered ? 0.25 : 0)) * fog * focusMul);
+      const mixRgb = lerpRgb(a.rgb, b.rgb, 0.5);
+      ctx.strokeStyle = rgbaFromRgb(mixRgb, alpha, 1.05);
+      ctx.lineWidth = lp.width * wScale * (isHovered ? 1.25 : 1.0);
+      if (l.kind === 'suggest' || l.kind === 'poss') {
+        ctx.setLineDash([5 * wScale, 4.5 * wScale]);
+      } else {
+        ctx.setLineDash([]);
+      }
+      ctx.beginPath();
+      ctx.moveTo(a.sx, a.sy);
+      ctx.lineTo(b.sx, b.sy);
+      ctx.stroke();
+
+      if (l.kind === 'suggest' && l.label && focusMul > 0.3) {
+        const mx = (a.sx + b.sx) * 0.5;
+        const my = (a.sy + b.sy) * 0.5 - 6;
+        ctx.font = '400 11.5px -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif';
+        const tw = ctx.measureText(l.label).width;
+        const lBox = { x1: mx - tw * 0.5 - 3, y1: my - 8, x2: mx + tw * 0.5 + 3, y2: my + 8 };
+        let overlap = false;
+        if (placedBoxes) {
+          for (let k = 0; k < placedBoxes.length; k++) {
+            if (boxesOverlap(lBox, placedBoxes[k])) {
+              overlap = true;
+              break;
+            }
+          }
+        }
+        if (!overlap) {
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.lineJoin = 'round';
+          ctx.lineWidth = 3.2;
+          ctx.strokeStyle = 'rgba(5, 6, 11, ' + (0.88 * fog * focusMul).toFixed(3) + ')';
+          ctx.strokeText(l.label, mx, my);
+          ctx.fillStyle = 'rgba(205, 216, 240, ' + (0.72 * fog * focusMul).toFixed(3) + ')';
+          ctx.fillText(l.label, mx, my);
+          if (placedBoxes) placedBoxes.push(lBox);
+        }
+      }
+    }
+    ctx.restore();
+  }
+}
+
+/* ===== parts/31-render-nodes.js ===== */
+function drawNodeBallAndIcon(n) {
+  if (n.depth < 80) return;
+  const visAlpha = Math.max(0.05, Math.min(1, n.fog * n.focusMul));
+  const bright = (STATUS_BRIGHT[n.status] || 1.0) * (1 + n.hoverGlow * 0.22);
+  const r = n.sr;
+  const sx = n.sx;
+  const sy = n.sy;
+
+  ctx.save();
+
+  const haloR = r + 14;
+  const haloAlpha = 0.22 * visAlpha * (n.kind === 'poss' ? 0.65 : 1.0);
+  const haloGrad = ctx.createRadialGradient(sx, sy, r * 0.35, sx, sy, haloR);
+  haloGrad.addColorStop(0, rgbaFromRgb(n.rgb, haloAlpha, bright));
+  haloGrad.addColorStop(1, rgbaFromRgb(n.rgb, 0, bright));
+  ctx.fillStyle = haloGrad;
+  ctx.beginPath();
+  ctx.arc(sx, sy, haloR, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (n.kind === 'poss') {
+    ctx.fillStyle = 'rgba(10, 13, 24, ' + (0.72 * visAlpha).toFixed(3) + ')';
+    ctx.beginPath();
+    ctx.arc(sx, sy, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = rgbaFromRgb(n.rgb, 0.88 * visAlpha, bright);
+    ctx.lineWidth = 1.6;
+    ctx.setLineDash([4.2, 3.6]);
+    ctx.beginPath();
+    ctx.arc(sx, sy, r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  } else {
+    ctx.fillStyle = rgbaFromRgb(n.rgb, visAlpha, bright);
+    ctx.beginPath();
+    ctx.arc(sx, sy, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const iconPath = getIconPath(n.icon);
+  if (iconPath && n.sIcon > 3) {
+    const scale = n.sIcon / 24;
+    ctx.save();
+    ctx.translate(sx - 12 * scale, sy - 12 * scale);
+    ctx.scale(scale, scale);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 1.8 / scale;
+    if (n.kind === 'poss') {
+      ctx.strokeStyle = rgbaFromRgb(n.rgb, 0.92 * visAlpha, bright);
+    } else {
+      ctx.strokeStyle = 'rgba(10, 12, 20, ' + (0.94 * visAlpha).toFixed(3) + ')';
+    }
+    ctx.stroke(iconPath);
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+function drawNodeLabels() {
+  const sorted = nodes.slice().sort(function (a, b) {
+    return b.depth - a.depth;
+  });
+
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  for (let i = 0; i < sorted.length; i++) {
+    const n = sorted[i];
+    if (!n.labelShown || !n.label) continue;
+
+    const visAlpha = Math.max(0.08, Math.min(1, n.fog * n.focusMul));
+    const bright = STATUS_BRIGHT[n.status] || 1.0;
+    const fSize = n.labelFontSize || (n.kind === 'center' ? 18 : 13);
+    const weight = n.labelWeight || (n.kind === 'center' ? '600' : '400');
+
+    ctx.font = weight + ' ' + fSize.toFixed(1) + 'px -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.lineWidth = 3.6;
+    ctx.strokeStyle = 'rgba(5, 6, 11, ' + (0.92 * visAlpha).toFixed(3) + ')';
+    ctx.strokeText(n.label, n.labelX, n.labelY);
+
+    if (n.kind === 'center') {
+      const tint = lerpRgb({ r: 235, g: 241, b: 255 }, n.rgb, 0.28);
+      ctx.fillStyle = rgbaFromRgb(tint, visAlpha, Math.min(1.15, bright));
+    } else if (n.kind === 'poss') {
+      ctx.fillStyle = rgbaFromRgb(n.rgb, 0.85 * visAlpha, bright);
+    } else {
+      ctx.fillStyle = 'rgba(222, 230, 248, ' + (0.92 * visAlpha * Math.min(1.08, bright)).toFixed(3) + ')';
+    }
+    ctx.fillText(n.label, n.labelX, n.labelY);
+  }
+
+  ctx.restore();
+}
+
+function drawEffects() {
+  ctx.save();
+
+  for (let i = 0; i < ripples.length; i++) {
+    const rp = ripples[i];
+    const u = Math.max(0, Math.min(1, rp.elapsed / rp.dur));
+    const ease = 1 - Math.pow(1 - u, 2.2);
+    const r = rp.maxR * ease;
+    const alpha = rp.startAlpha * (1 - u);
+    if (alpha <= 0.002) continue;
+    const rgb = hexToRgb(rp.color);
+    ctx.strokeStyle = rgbaFromRgb(rgb, alpha, 1.1);
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.arc(rp.x, rp.y, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  for (let i = 0; i < sparks.length; i++) {
+    const sp = sparks[i];
+    if (sp.trail && sp.trail.length > 1) {
+      ctx.beginPath();
+      ctx.moveTo(sp.trail[0].x, sp.trail[0].y);
+      for (let j = 1; j < sp.trail.length; j++) {
+        ctx.lineTo(sp.trail[j].x, sp.trail[j].y);
+      }
+      ctx.strokeStyle = 'rgba(255, 195, 115, 0.55)';
+      ctx.lineWidth = 2.0;
+      ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(255, 230, 165, 0.95)';
+    ctx.beginPath();
+    ctx.arc(sp.x, sp.y, 3.8, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  if (slashTrail.length > 1) {
+    ctx.beginPath();
+    ctx.moveTo(slashTrail[0].x, slashTrail[0].y);
+    for (let i = 1; i < slashTrail.length; i++) {
+      ctx.lineTo(slashTrail[i].x, slashTrail[i].y);
+    }
+    ctx.strokeStyle = 'rgba(235, 242, 255, 0.52)';
+    ctx.lineWidth = 1.6;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function renderFrame(timeSec) {
+  drawBackground(timeSec);
+  const placedBoxes = computeLabelLayout();
+  drawLinks(placedBoxes);
+
+  const sortedNodes = nodes.slice().sort(function (a, b) {
+    return b.depth - a.depth;
+  });
+  for (let i = 0; i < sortedNodes.length; i++) {
+    drawNodeBallAndIcon(sortedNodes[i]);
+  }
+
+  drawEffects();
+  drawNodeLabels();
+}
+
+/* ===== parts/40-input.js ===== */
+function hitTestNode(x, y) {
+  const sorted = nodes.slice().sort(function (a, b) {
+    return a.depth - b.depth;
+  });
+  for (let i = 0; i < sorted.length; i++) {
+    const n = sorted[i];
+    if (n.depth < 80) continue;
+    const dx = x - n.sx;
+    const dy = y - n.sy;
+    const hitR = n.sr + 5;
+    if (dx * dx + dy * dy <= hitR * hitR) {
+      return n;
+    }
+  }
+  return null;
+}
+
+function pointToSegmentInfo(px, py, x1, y1, x2, y2) {
+  const vx = x2 - x1;
+  const vy = y2 - y1;
+  const len2 = vx * vx + vy * vy;
+  if (len2 < 1e-4) {
+    return { dist: Math.hypot(px - x1, py - y1), u: 0.5 };
+  }
+  let u = ((px - x1) * vx + (py - y1) * vy) / len2;
+  const clampedU = Math.max(0, Math.min(1, u));
+  const cx = x1 + clampedU * vx;
+  const cy = y1 + clampedU * vy;
+  return {
+    dist: Math.hypot(px - cx, py - cy),
+    u: u
+  };
+}
+
+function hitTestLinkMid(x, y) {
+  let bestLink = null;
+  let bestDist = 9.5;
+  for (let i = 0; i < links.length; i++) {
+    const l = links[i];
+    if (l.cut) continue;
+    const a = nodeMap.get(l.a);
+    const b = nodeMap.get(l.b);
+    if (!a || !b || a.depth < 80 || b.depth < 80) continue;
+    const info = pointToSegmentInfo(x, y, a.sx, a.sy, b.sx, b.sy);
+    if (info.u >= 0.14 && info.u <= 0.86 && info.dist < bestDist) {
+      bestDist = info.dist;
+      bestLink = l;
+    }
+  }
+  return bestLink;
+}
+
+function segmentsIntersect(x1, y1, x2, y2, x3, y3, x4, y4) {
+  function ccw(ax, ay, bx, by, cx, cy) {
+    return (cy - ay) * (bx - ax) > (by - ay) * (cx - ax);
+  }
+  return (
+    ccw(x1, y1, x3, y3, x4, y4) !== ccw(x2, y2, x3, y3, x4, y4) &&
+    ccw(x1, y1, x2, y2, x3, y3) !== ccw(x1, y1, x2, y2, x4, y4)
+  );
+}
+
+function findCrossedLinks(x1, y1, x2, y2) {
+  const crossed = [];
+  for (let i = 0; i < links.length; i++) {
+    const l = links[i];
+    if (l.cut) continue;
+    const a = nodeMap.get(l.a);
+    const b = nodeMap.get(l.b);
+    if (!a || !b || a.depth < 80 || b.depth < 80) continue;
+    if (segmentsIntersect(x1, y1, x2, y2, a.sx, a.sy, b.sx, b.sy)) {
+      crossed.push(l);
+    }
+  }
+  return crossed;
+}
+
+function panCameraInScreenPlane(dx, dy, dtSec) {
+  cam.focusGoal = null;
+  cam.resetAnim = null;
+  const s = F_PERSP / Math.max(80, cam.D);
+  const wxp = -dx / s;
+  const wyp = -dy / s;
+
+  const cosP = Math.cos(cam.pitch);
+  const sinP = Math.sin(cam.pitch);
+  const x1 = wxp;
+  const y1 = wyp * cosP;
+  const z1 = -wyp * sinP;
+
+  const cosY = Math.cos(cam.yaw);
+  const sinY = Math.sin(cam.yaw);
+  const dtx = x1 * cosY - z1 * sinY;
+  const dty = y1;
+  const dtz = x1 * sinY + z1 * cosY;
+
+  cam.tx += dtx;
+  cam.ty += dty;
+  cam.tz += dtz;
+
+  const invDt = 1 / Math.max(0.008, Math.min(0.05, dtSec));
+  cam.vtx = dtx * invDt * 0.45;
+  cam.vty = dty * invDt * 0.45;
+  cam.vtz = dtz * invDt * 0.45;
+}
+
+function undoLastCutBatch() {
+  if (cutHistory.length === 0) return;
+  const batch = cutHistory.pop();
+  for (let i = 0; i < batch.length; i++) {
+    batch[i].cut = false;
+  }
+  simAlpha = Math.max(simAlpha, 0.38);
+  if (focusedId) recomputeFocusHops();
+}
+
+/* ===== parts/41-input-events.js ===== */
+function setupInputEvents() {
+  let pointerDown = false, activePointerId = null;
+  let interactionType = 'none', blankSubMode = 'undecided';
+  let downX = 0, downY = 0, lastX = 0, lastY = 0;
+  let downTime = 0, lastMoveTime = 0;
+  let downYaw = YAW_INIT, downPitch = PITCH_INIT;
+  let downNode = null, hasMovedEnough = false;
+  let currentCutBatch = [], swishPlayed = false;
+  let lastBlankClickTime = 0, lastBlankClickX = -9999, lastBlankClickY = -9999;
+
+  canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+  canvas.addEventListener('pointerdown', function (e) {
+    if (typeof ensureAudio === 'function') ensureAudio();
+    if (pointerDown) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    pointerPos.x = x;
+    pointerPos.y = y;
+
+    pointerDown = true;
+    activePointerId = e.pointerId;
+    downX = x;
+    downY = y;
+    lastX = x;
+    lastY = y;
+    downTime = performance.now();
+    lastMoveTime = downTime;
+    downYaw = cam.yaw;
+    downPitch = cam.pitch;
+    hasMovedEnough = false;
+    currentCutBatch = [];
+    swishPlayed = false;
+    slashTrail = [];
+
+    try {
+      canvas.setPointerCapture(e.pointerId);
+    } catch (err) {}
+
+    if (e.button === 2 || e.shiftKey) {
+      interactionType = 'pan';
+      cam.vYaw = 0;
+      cam.vPitch = 0;
+      canvas.classList.add('dragging-cam');
+      return;
+    }
+
+    const hitN = hitTestNode(x, y);
+    if (hitN) {
+      interactionType = 'node';
+      downNode = hitN;
+      return;
+    }
+
+    const hitL = hitTestLinkMid(x, y);
+    if (hitL) {
+      interactionType = 'elastic';
+      elastic = {
+        link: hitL, active: true, rebounding: false,
+        px: x, py: y, vx: 0, vy: 0,
+        tension: 0, dirX: 0, dirY: -1, elapsed: 0
+      };
+      return;
+    }
+
+    interactionType = 'blank';
+    blankSubMode = 'undecided';
+    cam.vYaw = 0;
+    cam.vPitch = 0;
+    cam.vtx = 0;
+    cam.vty = 0;
+    cam.vtz = 0;
+  });
+
+  window.addEventListener('pointermove', function (e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    pointerPos.x = x;
+    pointerPos.y = y;
+
+    if (!pointerDown || (activePointerId !== null && e.pointerId !== activePointerId)) {
+      const hn = hitTestNode(x, y);
+      hoveredNode = hn;
+      hoveredLink = hn ? null : hitTestLinkMid(x, y);
+      canvas.classList.toggle('hovering-node', !!hoveredNode);
+      canvas.classList.toggle('hovering-link', !hoveredNode && !!hoveredLink);
+      return;
+    }
+
+    const now = performance.now();
+    const dtMs = Math.max(1, now - lastMoveTime);
+    const dtSec = dtMs / 1000;
+    const dx = x - lastX;
+    const dy = y - lastY;
+    const totalDist = Math.hypot(x - downX, y - downY);
+
+    if (totalDist > 4.5) {
+      hasMovedEnough = true;
+    }
+
+    if (interactionType === 'node' && downNode) {
+      if (hasMovedEnough && !draggedNode) {
+        draggedNode = downNode;
+        draggedNode.pinned = false;
+        draggedNode.dragVx = 0;
+        draggedNode.dragVy = 0;
+        draggedNode.dragVz = 0;
+        simAlpha = Math.max(simAlpha, 0.35);
+      }
+    } else if (interactionType === 'elastic' && elastic && elastic.active) {
+      const a = nodeMap.get(elastic.link.a);
+      const b = nodeMap.get(elastic.link.b);
+      if (a && b) {
+        const mx = (a.sx + b.sx) * 0.5;
+        const my = (a.sy + b.sy) * 0.5;
+        const d = Math.hypot(x - mx, y - my);
+        const s = 125 * Math.tanh(d / 125);
+        const t = s / 125;
+        elastic.tension = t;
+        if (typeof creak === 'function') creak(t, 1);
+      }
+    } else if (interactionType === 'pan') {
+      panCameraInScreenPlane(dx, dy, dtSec);
+    } else if (interactionType === 'blank') {
+      const segDist = Math.hypot(dx, dy);
+      const speed = (segDist / dtMs) * 1000;
+      const elapsedSinceDown = now - downTime;
+      const crossed = findCrossedLinks(lastX, lastY, x, y);
+
+      if (blankSubMode === 'undecided') {
+        if (elapsedSinceDown <= 300 && speed >= 700 && crossed.length > 0) {
+          blankSubMode = 'slash';
+          cam.yaw = downYaw;
+          cam.pitch = downPitch;
+          cam.vYaw = 0;
+          cam.vPitch = 0;
+          slashTrail = [{ x: downX, y: downY }, { x: lastX, y: lastY }, { x: x, y: y }];
+          if (!swishPlayed && typeof swishSound === 'function') {
+            swishSound();
+            swishPlayed = true;
+          }
+          for (let i = 0; i < crossed.length; i++) {
+            crossed[i].cut = true;
+            currentCutBatch.push(crossed[i]);
+            if (typeof sliceSound === 'function') sliceSound();
+          }
+          simAlpha = Math.max(simAlpha, 0.38);
+          if (focusedId) recomputeFocusHops();
+        } else if (elapsedSinceDown > 300) {
+          blankSubMode = 'orbit';
+          canvas.classList.add('dragging-cam');
+        }
+      } else if (blankSubMode === 'slash') {
+        slashTrail.push({ x: x, y: y });
+        if (slashTrail.length > 18) slashTrail.shift();
+        for (let i = 0; i < crossed.length; i++) {
+          if (!crossed[i].cut) {
+            crossed[i].cut = true;
+            currentCutBatch.push(crossed[i]);
+            if (typeof sliceSound === 'function') sliceSound();
+            simAlpha = Math.max(simAlpha, 0.38);
+          }
+        }
+        if (crossed.length > 0 && focusedId) recomputeFocusHops();
+      }
+
+      if (blankSubMode !== 'slash' && hasMovedEnough) {
+        cam.focusGoal = null;
+        cam.resetAnim = null;
+        cam.yaw += dx * 0.005;
+        cam.pitch = Math.max(-1.2, Math.min(1.2, cam.pitch + dy * 0.005));
+        const instVYaw = (dx * 0.005) / Math.max(0.008, dtSec);
+        const instVPitch = (dy * 0.005) / Math.max(0.008, dtSec);
+        cam.vYaw = cam.vYaw * 0.35 + instVYaw * 0.65;
+        cam.vPitch = cam.vPitch * 0.35 + instVPitch * 0.65;
+      }
+    }
+
+    lastX = x;
+    lastY = y;
+    lastMoveTime = now;
+  });
+
+  function finishPointer(e) {
+    if (!pointerDown) return;
+    if (activePointerId !== null && e.pointerId !== undefined && e.pointerId !== activePointerId) return;
+
+    const now = performance.now();
+    if (now - lastMoveTime > 65) {
+      cam.vYaw = 0;
+      cam.vPitch = 0;
+      cam.vtx = 0;
+      cam.vty = 0;
+      cam.vtz = 0;
+    }
+
+    if (interactionType === 'node' && downNode) {
+      if (draggedNode) {
+        draggedNode.pinned = true;
+        draggedNode.vx = 0;
+        draggedNode.vy = 0;
+        draggedNode.vz = 0;
+        draggedNode = null;
+      } else {
+        if (downNode.kind === 'poss') {
+          downNode.kind = 'kept';
+          for (let i = 0; i < links.length; i++) {
+            const l = links[i];
+            if (!l.cut && (l.a === downNode.id || l.b === downNode.id) && l.kind === 'poss') {
+              l.kind = 'kept';
+            }
+          }
+          simAlpha = Math.max(simAlpha, 0.3);
+        }
+        setFocusNode(downNode.id);
+        addRipple(downNode.sx, downNode.sy, 300, 1.45, 0.22, downNode.color);
+      }
+    } else if (interactionType === 'elastic' && elastic && elastic.active) {
+      const t = elastic.tension || 0;
+      const launch = t >= 0.7;
+      if (typeof twang === 'function') twang(t, launch);
+      if (launch && elastic.link) {
+        const na = nodeMap.get(elastic.link.a);
+        const nb = nodeMap.get(elastic.link.b);
+        if (na && nb) {
+          const midDepth = (na.depth + nb.depth) * 0.5;
+          const tx = elastic.px + elastic.dirX * 85;
+          const ty = elastic.py + elastic.dirY * 85;
+          sparks.push({
+            startX: elastic.px,
+            startY: elastic.py,
+            x: elastic.px,
+            y: elastic.py,
+            tx: tx,
+            ty: ty,
+            depth: midDepth,
+            a: elastic.link.a,
+            b: elastic.link.b,
+            elapsed: 0,
+            dur: 0.38,
+            trail: [{ x: elastic.px, y: elastic.py }]
+          });
+        }
+      }
+      elastic.active = false;
+      elastic.rebounding = true;
+      elastic.elapsed = 0;
+    } else if (interactionType === 'blank') {
+      if (blankSubMode === 'slash') {
+        if (currentCutBatch.length > 0) {
+          cutHistory.push(currentCutBatch.slice());
+        }
+        slashTrail = [];
+      } else if (!hasMovedEnough) {
+        const isDbl =
+          now - lastBlankClickTime < 320 &&
+          Math.hypot(downX - lastBlankClickX, downY - lastBlankClickY) < 24;
+        if (isDbl) {
+          triggerCameraReset();
+          lastBlankClickTime = 0;
+        } else {
+          lastBlankClickTime = now;
+          lastBlankClickX = downX;
+          lastBlankClickY = downY;
+          setFocusNode(null);
+          addRipple(downX, downY, 60, 0.4, 0.22, '#DCE6FF');
+        }
+      }
+    }
+
+    pointerDown = false;
+    activePointerId = null;
+    interactionType = 'none';
+    downNode = null;
+    slashTrail = [];
+    canvas.classList.remove('dragging-cam');
+  }
+
+  window.addEventListener('pointerup', finishPointer);
+  window.addEventListener('pointercancel', finishPointer);
+
+  canvas.addEventListener(
+    'wheel',
+    function (e) {
+      e.preventDefault();
+      cam.resetAnim = null;
+      cam.targetD = Math.max(500, Math.min(2400, cam.targetD * Math.exp(e.deltaY * 0.001)));
+    },
+    { passive: false }
+  );
+}
+
+/* ===== parts/50-boot.js ===== */
+function resizeCanvas() {
+  W = window.innerWidth;
+  H = window.innerHeight;
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function initUIElements() {
+  const legendItemsEl = document.getElementById('legend-items');
+  const legendNoteEl = document.getElementById('legend-note');
+  if (legendItemsEl && DATA && Array.isArray(DATA.domains)) {
+    legendItemsEl.innerHTML = '';
+    for (let i = 0; i < DATA.domains.length; i++) {
+      const d = DATA.domains[i];
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      const dot = document.createElement('span');
+      dot.className = 'legend-dot';
+      dot.style.background = d.color;
+      dot.style.boxShadow = '0 0 8px ' + d.color;
+      const name = document.createElement('span');
+      name.textContent = d.name;
+      item.appendChild(dot);
+      item.appendChild(name);
+      legendItemsEl.appendChild(item);
+    }
+  }
+  if (legendNoteEl && DATA && DATA.legendNote) {
+    legendNoteEl.textContent = DATA.legendNote;
+  }
+
+  const hintEl = document.getElementById('top-left-hint');
+  if (hintEl) {
+    if (DATA && DATA.hint) {
+      hintEl.textContent = DATA.hint;
+    }
+    setTimeout(function () {
+      hintEl.classList.add('fade-out');
+    }, 8000);
+  }
+
+  const muteBtn = document.getElementById('mute');
+  if (muteBtn) {
+    muteBtn.addEventListener('click', function () {
+      if (typeof ensureAudio === 'function') ensureAudio();
+      const nextMuted = typeof muted !== 'undefined' ? !muted : false;
+      if (typeof setMuted === 'function') setMuted(nextMuted);
+      muteBtn.classList.toggle('is-muted', nextMuted);
+      muteBtn.textContent = nextMuted ? '✕' : '♪';
+    });
+  }
+
+  const ideaInput = document.getElementById('idea-input');
+  if (ideaInput) {
+    ideaInput.addEventListener('keydown', function (e) {
+      if (typeof ensureAudio === 'function') ensureAudio();
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const val = ideaInput.value.trim();
+        if (val) {
+          addNewIdeaFromInput(val);
+          ideaInput.value = '';
+        }
+      }
+    });
+    setTimeout(function () {
+      try {
+        ideaInput.focus();
+      } catch (err) {}
+    }, 30);
+  }
+
+  window.addEventListener('keydown', function (e) {
+    if (typeof ensureAudio === 'function') ensureAudio();
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
+      const active = document.activeElement;
+      if (!active || active.id !== 'idea-input' || !active.value) {
+        if (cutHistory.length > 0) {
+          e.preventDefault();
+          undoLastCutBatch();
+        }
+      }
+    } else if (e.key === 'Escape') {
+      if (focusedId) {
+        setFocusNode(null);
+      }
+    }
+  });
+}
+
+function computePanelStats() {
+  let activeLinkCount = 0;
+  for (let i = 0; i < links.length; i++) {
+    if (!links[i].cut) activeLinkCount += 1;
+  }
+
+  let ideaCount = 0;
+  let allFit = true;
+  for (let i = 0; i < nodes.length; i++) {
+    const n = nodes[i];
+    if (n.kind === 'idea') ideaCount += 1;
+    if (n.sx - n.sr < 0 || n.sx + n.sr > W || n.sy - n.sr < 0 || n.sy + n.sr > H) {
+      allFit = false;
+    }
+  }
+
+  let minScreenDist = Infinity;
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const d = Math.hypot(nodes[i].sx - nodes[j].sx, nodes[i].sy - nodes[j].sy);
+      if (d < minScreenDist) minScreenDist = d;
+    }
+  }
+  if (!isFinite(minScreenDist)) minScreenDist = 0;
+
+  const constStats = [];
+  const rawConsts = (DATA && DATA.constellations) || [];
+  for (let i = 0; i < rawConsts.length; i++) {
+    const c = rawConsts[i];
+    const cid = 'item:' + c.id;
+    let memberCount = 0;
+    let connectedIdeas = 0;
+    for (let j = 0; j < nodes.length; j++) {
+      if (nodes[j].kind === 'member' && nodes[j].parentId === cid) {
+        memberCount += 1;
+      }
+    }
+    for (let j = 0; j < links.length; j++) {
+      const l = links[j];
+      if (l.cut) continue;
+      if (l.a === cid || l.b === cid) {
+        const otherId = l.a === cid ? l.b : l.a;
+        const other = nodeMap.get(otherId);
+        if (other && other.kind === 'idea') connectedIdeas += 1;
+      }
+    }
+    constStats.push({
+      id: c.id,
+      title: c.title,
+      members: memberCount,
+      ideas: connectedIdeas,
+      status: c.status
+    });
+  }
+
+  return {
+    nodes: nodes.length,
+    links: activeLinkCount,
+    ideas: ideaCount,
+    labelOverlaps: lastLabelOverlaps,
+    fits: allFit,
+    nearestMin: Math.round(minScreenDist * 10) / 10,
+    constellations: constStats
+  };
+}
+
+/* ===== parts/51-test-and-loop.js ===== */
+function clamp01(v, fallback) {
+  const num = Number(v);
+  if (isNaN(num)) return fallback;
+  return Math.max(0, Math.min(1, num));
+}
+
+function applyForceValues(v) {
+  if (!v) return;
+  forces.center = clamp01(v.center, forces.center);
+  forces.repel = clamp01(v.repel, forces.repel);
+  forces.link = clamp01(v.link, forces.link);
+  forces.distance = clamp01(v.distance, forces.distance);
+  simAlpha = Math.max(simAlpha, 0.4);
+}
+
+function handleApplyAnchors(list) {
+  if (!Array.isArray(list) || list.length === 0) return;
+  anchorTargets = new Map();
+  for (let i = 0; i < list.length; i++) {
+    const item = list[i];
+    if (!item || !item.id) continue;
+    const id = String(item.id).startsWith('item:') ? String(item.id) : 'item:' + item.id;
+    const tx = Math.max(-1, Math.min(1, Number(item.x) || 0)) * 420;
+    const ty = Math.max(-1, Math.min(1, Number(item.y) || 0)) * 320;
+    const tz = Math.max(-1, Math.min(1, Number(item.z) || 0)) * 260;
+    anchorTargets.set(id, { x: tx, y: ty, z: tz });
+    const n = nodeMap.get(id);
+    if (n) n.pinned = false;
+  }
+  anchorTimer = 3.0;
+  simAlpha = Math.max(simAlpha, 0.5);
+}
+
+function initForcesPanelAndHealth() {
+  if (typeof createForcesPanel === 'function') {
+    forcesPanel = createForcesPanel({
+      mode: '3d',
+      presets: PRESETS,
+      initial: {
+        center: PRESETS.claude.center,
+        repel: PRESETS.claude.repel,
+        link: PRESETS.claude.link,
+        distance: PRESETS.claude.distance
+      },
+      initialMode: 'claude',
+      modelReady: false,
+      getStats: computePanelStats,
+      onChange: function (values) {
+        applyForceValues(values);
+      },
+      applyAnchors: handleApplyAnchors
+    });
+  }
+
+  if (location.protocol === 'http:' || location.protocol === 'https:') {
+    fetch('/api/health')
+      .then(function (res) {
+        return res.ok ? res.json() : null;
+      })
+      .then(function (data) {
+        if (data && data.ok && data.model && forcesPanel && typeof forcesPanel.setModelReady === 'function') {
+          forcesPanel.setModelReady(true);
+        }
+      })
+      .catch(function () {});
+  }
+}
+
+function installTestHook() {
+  window.__star3d = {
+    nodes: nodes,
+    links: links,
+    cam: cam,
+    audioLog: typeof audioLog !== 'undefined' ? audioLog : [],
+    state: function () {
+      let activeLinks = 0;
+      for (let i = 0; i < links.length; i++) {
+        if (!links[i].cut) activeLinks += 1;
+      }
+      let shownLabels = 0;
+      for (let i = 0; i < nodes.length; i++) {
+        if (nodes[i].labelShown) shownLabels += 1;
+      }
+      return {
+        nodes: nodes.length,
+        links: activeLinks,
+        labels: shownLabels,
+        fps: Math.round(fpsValue),
+        view: '3d',
+        focus: focusedId,
+        forces: {
+          center: forces.center,
+          repel: forces.repel,
+          link: forces.link,
+          distance: forces.distance
+        }
+      };
+    },
+    test: {
+      screenOf: function (id) {
+        const n = nodeMap.get(id);
+        if (!n) return null;
+        return { x: n.sx, y: n.sy, depth: n.depth };
+      },
+      screenOfLink: function (a, b, t) {
+        const u = t === undefined ? 0.5 : t;
+        let found = null;
+        for (let i = 0; i < links.length; i++) {
+          const l = links[i];
+          if (!l.cut && ((l.a === a && l.b === b) || (l.a === b && l.b === a))) {
+            found = l;
+            break;
+          }
+        }
+        if (!found) return null;
+        const na = nodeMap.get(a);
+        const nb = nodeMap.get(b);
+        if (!na || !nb) return null;
+        if (elastic && elastic.link === found) {
+          if (u <= 0.5) {
+            const k = u * 2;
+            return { x: na.sx + (elastic.px - na.sx) * k, y: na.sy + (elastic.py - na.sy) * k };
+          } else {
+            const k = (u - 0.5) * 2;
+            return { x: elastic.px + (nb.sx - elastic.px) * k, y: elastic.py + (nb.sy - elastic.py) * k };
+          }
+        }
+        return {
+          x: na.sx + (nb.sx - na.sx) * u,
+          y: na.sy + (nb.sy - na.sy) * u
+        };
+      },
+      labelsShown: function () {
+        const arr = [];
+        for (let i = 0; i < nodes.length; i++) {
+          if (nodes[i].labelShown) arr.push(nodes[i].id);
+        }
+        return arr;
+      },
+      overlaps: function () {
+        return countLabelOverlaps();
+      },
+      setForces: function (vals) {
+        applyForceValues(vals);
+        if (forcesPanel) {
+          if (typeof forcesPanel.setMode === 'function') forcesPanel.setMode('manual');
+          if (typeof forcesPanel.setValues === 'function') forcesPanel.setValues(forces, false);
+        }
+      },
+      getForces: function () {
+        return {
+          center: forces.center,
+          repel: forces.repel,
+          link: forces.link,
+          distance: forces.distance
+        };
+      }
+    }
+  };
+}
+
+function boot() {
+  resizeCanvas();
+  window.addEventListener('resize', function () {
+    resizeCanvas();
+    updateProjections(0.016);
+    renderFrame(performance.now() * 0.001);
+  });
+
+  initBgStars();
+  buildGraphFromData();
+  prewarmPhysics(300);
+  updateProjections(0.016);
+  initUIElements();
+  setupInputEvents();
+  initForcesPanelAndHealth();
+  installTestHook();
+  renderFrame(0);
+
+  let lastFrameTime = performance.now();
+  function frame(now) {
+    const rawDt = Math.max(0.001, (now - lastFrameTime) / 1000);
+    lastFrameTime = now;
+    const instFps = 1 / rawDt;
+    fpsValue = fpsValue * 0.9 + Math.min(120, instFps) * 0.1;
+
+    stepPhysicsTick();
+    stepCameraAndEffects(rawDt);
+    updateProjections(rawDt);
+    renderFrame(now * 0.001);
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+boot();
+
+</script></body></html>

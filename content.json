@@ -1,0 +1,383 @@
+{
+  "version": 2,
+  "updated": "2026-11-06",
+  "merge_note": "你交给我的 39 件事，按「是不是同一件事」合并后是 19 件。每一项下面的「包含」写着它合并了哪些原来的事，一条没丢。",
+  "rules": [
+    "等你验收的最多 2 件：满了先验收，再派新活",
+    "只在 Agent 停下来等你的时候切换项目",
+    "新想法先记一笔，不直接开新会话"
+  ],
+  "note": "DeepSeek 那篇 Super Agent 的设计文档自己也说：任务一多，瓶颈是人的注意力，不是模型；一个人同时盯 3-5 个会话就到顶了。",
+  "groups": [
+    {"id": "running", "name": "在跑", "desc": "四件事同时推进，代码和会话都在台式机"},
+    {"id": "learn", "name": "学习与研究", "desc": "按顺序走，每段 15-40 分钟"},
+    {"id": "system", "name": "你的系统", "desc": "已经搭好的东西，接通比新做更值钱"},
+    {"id": "create", "name": "创作", "desc": "精力低的时候也能玩"},
+    {"id": "pool", "name": "想法池", "desc": "先验证，再决定要不要做"},
+    {"id": "frozen", "name": "冻结 / 待你定", "desc": ""}
+  ],
+  "items": [
+    {
+      "id": "lyrics", "group": "running", "status": "running", "order": 1, "handoff": "lyrics",
+      "title": "演唱会歌词同步器",
+      "includes": ["演唱会歌词同步器"],
+      "summary": "演唱会大屏没歌词时，手机自动识别正在唱的歌，同步滚动实时歌词。",
+      "why": "你自己就是用户：杭州查理·普斯演唱会没歌词，跟不上。离能用最近，做完能直接带去下一场演唱会。",
+      "where": "台式机 D:\\Claude Code 工作区\\projects（11/6 早上还有会话）",
+      "effort": "你估计已过半；剩下最难的是现场版对齐",
+      "done_when": "在一场真实演唱会里（或者外放现场版录音模拟），连续 3 首歌能自动识别并跟上歌词。",
+      "steps": [
+        {"t": "在台式机开这个项目的会话，贴启动提示词", "d": "点下面的按钮复制提示词。Agent 会先告诉你做到哪了，再写出交接卡，之后这里会显示它写的下一步。", "min": 5,
+         "prompt": "你在台式机上接手「演唱会歌词同步器」。\n1. 在 D:\\Claude Code 工作区\\projects 里找到这个项目的目录（11/6 早上有过会话），先读代码和已有文档，用 5 句话告诉我现在做到哪了。\n2. 把 D:\\Claude Code 工作区\\knowledge\\Agent-Shared\\templates\\HANDOFF_RULE.md 里的规则追加到本项目 CLAUDE.md 末尾（没有就新建，已有内容不要动）。\n3. 按规则写出 D:\\Claude Code 工作区\\knowledge\\Agent-Shared\\home\\handoff\\lyrics.md，下一步写最容易开始的那一步。\n4. 然后停下来等我确认，先不要改代码。"},
+        {"t": "先做一个兜底对齐：识别出歌以后，点一下屏幕告诉它「这句正在唱」", "d": "现场版和录音室版的速度、前奏长度都不一样，纯自动对齐最难。先有手动点一下的兜底，能用了再追求全自动。", "min": 30},
+        {"t": "接一个现成的带时间轴歌词源", "delegate": "查 LRCLIB 的公开接口（https://lrclib.net），写出按歌名和歌手取带时间轴歌词的请求地址、参数、返回格式，附一段 Python 调用示例和一段 LRC 解析示例；再查 ACRCloud 听歌识曲的免费额度和接入方式。只写查到的，查不到就写「待确认」。", "d": "LRCLIB 是免费的带时间轴歌词库，有公开接口。识别歌曲这一步如果还没定，ACRCloud 有听歌识曲接口和免费额度。", "min": 30,
+         "links": [{"t": "LRCLIB", "u": "https://lrclib.net"}, {"t": "ACRCloud", "u": "https://www.acrcloud.com"}]},
+        {"t": "用现场版视频实测一次", "d": "在 B 站找 3 首你喜欢的歌的现场版，用另一台设备外放，记下识别用了几秒、歌词差了几句，写进交接卡。", "min": 30}
+      ]
+    },
+    {
+      "id": "school", "group": "running", "status": "running", "order": 2, "handoff": "school",
+      "title": "中东学校：ESP32 科学实验台 + 一键备课",
+      "includes": ["ESP32 三语科学实验台", "一键备课", "老师工作台"],
+      "summary": "同一批老师、同一所试点校（曾老师 / Al Zawraa）、同一份三语教案：实验台是产品，一键备课是它的内容引擎，老师工作台就是一键备课本身。",
+      "why": "决策备忘录说学校要的是「整套实验室 + 老师能用的教案」，不是又一块开发板；你的备课流水线正好是教案那一半。你的蓝帽复盘自己写了：分析已经饱和，0 次用户接触、0 台样机。最值钱的一步，是把东西放到老师手里。",
+      "where": "台式机 D:\\mosaico-firmware、D:\\idea-validation-agents、D:\\hermes-agents\\lesson-prep；决策备忘录在 Agent-Shared\\knowledge\\validations\\",
+      "effort": "备忘录的推进清单：3 周，预算 AED 3,000 以内",
+      "done_when": "8 场学校访谈做完，至少 1 份生成的课件被老师真正用在课堂上；按备忘录写死的重算规则决定：继续 TEST，还是转 PIVOT。",
+      "steps": [
+        {"t": "在台式机开会话，贴启动提示词", "d": "Agent 会对照蓝帽复盘的推进清单和备课队列，告诉你各做到哪了。", "min": 5,
+         "prompt": "你在台式机上接手「中东学校：ESP32 科学实验台 + 一键备课」。\n1. 读 D:\\Claude Code 工作区\\knowledge\\Agent-Shared\\knowledge\\brainstorm\\20261103-0409-blue.md 的推进清单，以及 D:\\mosaico-firmware、D:\\idea-validation-agents、D:\\hermes-agents\\lesson-prep 的现状，告诉我 T0 的 4 件事各做到哪了、备课队列里 9 张待审课单分别是什么；Agent-Shared\\home\\prepared\\ 里以 school 开头的文件是已经备好的材料，先读。\n2. 把 Agent-Shared\\templates\\HANDOFF_RULE.md 里的规则追加到 D:\\mosaico-firmware\\CLAUDE.md 末尾（没有就新建，已有内容不要动）。\n3. 按规则写出 Agent-Shared\\home\\handoff\\school.md，下一步写最容易开始的那一步。\n4. 然后停下来等我确认。"},
+        {"t": "挑 1 张待审课单，直接发给曾老师", "d": "别自己审 9 张。这一步同时是实验台的第一次用户接触：问她能不能用、哪里要改、她们学校科学课现在缺什么。", "min": 15},
+        {"t": "做 1 页访谈卡", "delegate": "按 knowledge\\brainstorm\\20261103-0409-blue.md 推进清单的 T0-01 做 1 页访谈卡：三句问题照抄备忘录原文；三档价格用 knowledge\\validations\\ 里决策备忘录的试点包 AED 2,490、标包 AED 6,900、第二间实验室 AED 4,900 加年费 AED 1,200；再写一段外观图的文字描述（亚克力外壳、丝印、金属铭牌、保修卡、安全清单）。英语版、阿语版各一份，阿语版开头注明「发出前请母语老师过一眼」。", "d": "3 个问题 + 3 档价格 + 1 张外观图，备忘录要求 30 分钟内能发出去。问题用备忘录里那三句：上次坏掉的设备怎么处理的？科学课为什么不用阿语教材？去年买设备是怎么决定的？", "min": 30,
+         "prompt": "读 Agent-Shared\\knowledge\\brainstorm\\20261103-0409-blue.md 的推进清单，帮我做 T0-01 访谈卡：1 页，3 个问题、3 档价格、1 张外观图的描述，英文版和阿语版各一份。"},
+        {"t": "列 20 所国际学校的科学组长", "d": "GEMS、Taaleem、ADEK、IB、英制学校，要姓名和邮箱，至少 12 个有效联系人。可以先让情报雷达或 Claude 搜一轮。", "min": 40},
+        {"t": "约 8 场 20 分钟线上访谈", "d": "迪拜比北京晚 4 小时，约在北京 14:00-18:00。只问那三句，不演示、不谈 App。", "min": 30},
+        {"t": "把备课模板改成两个版本", "d": "备课流水线现在出的是三语对照。按你蓝帽复盘定下的教义，学生讲义只要英语 + 阿语，中文只进教师版。", "min": 30,
+         "prompt": "把 D:\\hermes-agents\\lesson-prep 的生成模板改成两份输出：学生讲义只有英语和阿语（不做三语并列），教师版用中文。改完用一张课单重跑一次给我看。"},
+        {"t": "按重算规则定去留", "d": "备忘录写死了：8-12 场里有 6 场以上提到外观、维修或担责，而且没人接受「本地换新 + 三年保修」，就降到 54 分，转 PIVOT。老师工作台不用单做：等一键备课真有老师天天用，再决定要不要拆出来。", "min": 20}
+      ]
+    },
+    {
+      "id": "land-lease", "group": "running", "status": "running", "order": 3, "handoff": "land-lease",
+      "title": "土地租赁合同重做（顺带沉淀方法论）",
+      "includes": ["土地租赁合同管理重做", "产品方法论（AI-native SDLC）", "黑客松工作台", "小模型微调", "LLM wiki 与企业知识库", "产品经理默会知识"],
+      "summary": "用一个真实的政府项目，把重做、学微调、试知识库、沉淀方法论放在一起做。",
+      "why": "这 6 件事都是从同一个案例长出来的：微调和知识库是重做时要用的技术，方法论、黑客松模板和默会知识是做完以后的沉淀。分开做是 6 个半成品，合在一起是一个能写进作品集的完整故事。",
+      "where": "这台：代码 Documents\\桌面归档\\项目代码\\黑客松\\代码（GitHub Sanshix/fde-land-evidence-demo），练习集 claudeeee\\land_lease_topic，方法论初稿 Desktop\\AI-Native-SOP；台式机 clone 后在 D:\\Claude Code 工作区\\projects\\land-lease",
+      "effort": "两周：复盘 + 基线 + 一处改进；沉淀跟着走",
+      "done_when": "新版在练习集标准答案上的准确率比旧版有一个说得出数字的提升；同时有一份用这次过程验证过的 SOP。",
+      "steps": [
+        {"t": "在台式机 clone 代码、移入练习集", "d": "代码走 GitHub；练习集、架构方案和甲方访谈已经放在 Agent-Shared\\incoming\\land-lease\\，Syncthing 会自动带到台式机。", "min": 15,
+         "prompt": "你在台式机上接手「土地租赁合同管理重做」。\n1. 把 https://github.com/Sanshix/fde-land-evidence-demo.git clone 到 D:\\Claude Code 工作区\\projects\\land-lease。\n2. 把 D:\\Claude Code 工作区\\knowledge\\Agent-Shared\\incoming\\land-lease\\ 里的东西移到 D:\\Claude Code 工作区\\projects\\land-lease\\materials\\，核对文件数和大小一致后，删掉 incoming 里这一份。\n3. 把 Agent-Shared\\templates\\HANDOFF_RULE.md 里的规则追加到本项目 CLAUDE.md 末尾（没有就新建，已有内容不要动）。\n4. 先读 D:\\Claude Code 工作区\\knowledge\\Agent-Shared\\home\\prepared\\land-lease.2.md（已经整理好的甲方 5 个痛点），再对照 materials 里 10月27日的访谈原文，补上漏掉的。\n5. 按规则写出 Agent-Shared\\home\\handoff\\land-lease.md，然后停下来等我确认，先不要改代码。"},
+        {"t": "读甲方访谈，列出 5 个最痛的点", "d": "甲方真正在意什么？按出现次数和情绪强度排，每个点附原话。", "min": 30},
+        {"t": "跑一遍基线", "d": "用旧系统跑练习集，和 08_标准答案\\合同要素.csv 逐字段对比，算出每个字段的准确率。之后所有改进都和它比。", "min": 40},
+        {"t": "先试不微调的办法", "d": "挑最差的一个字段：改提示词、加 3-5 个示例，或者换千问的视觉版（Qwen3-VL，有 8B 版本，官方有文档解析的教程）直接读扫描件。很多时候到这一步就够了。", "min": 60,
+         "links": [{"t": "Qwen3-VL", "u": "https://github.com/QwenLM/Qwen3-VL"}]},
+        {"t": "不够再上 LoRA 微调（顺带学会微调）", "d": "微调本身就是在改权重：全量微调改全部权重，LoRA 只训练一小块附加权重、可以再合并回去，8B 这个规模一般用 LoRA 就够。千问 3 这一代是 8B，7B 是 2.5 代的型号，先确认当时用的哪个。工具用 LLaMA-Factory（有网页界面）或 Unsloth，几百条标注就能起步；显卡在 AutoDL 按小时租。", "min": 90,
+         "links": [{"t": "LLaMA-Factory", "u": "https://github.com/hiyouga/LLaMA-Factory"}, {"t": "Unsloth", "u": "https://github.com/unslothai/unsloth"}, {"t": "AutoDL", "u": "https://www.autodl.com"}]},
+        {"t": "试一个小知识库（LLM wiki）", "d": "Karpathy 的 LLM Wiki 思路：让大模型持续维护一份 markdown 维基，而不是每次查询都重新检索。拿土地租赁的法规和模板做一个小 wiki，用练习集里的 10 个问题，和直接检索比答对率。你的 Agent-Shared 本身就是这种做法的雏形。", "min": 90,
+         "links": [{"t": "LLM Wiki（Gist）", "u": "https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f"}]},
+        {"t": "按 AI-Native SDLC 整理成 SOP v1", "d": "Anthropic 的 Playbook 保留六个传统阶段，执行交给 Agent，人把关质量（比如写代码前先由人批准方案、PR 由人签字）。把你的 AI-Native开发SOP.md 按六个阶段重排，每个阶段写清 Agent 做什么、你把关什么、交付物是什么。", "min": 60,
+         "links": [{"t": "Playbook 解读（Port）", "u": "https://www.port.io/blog/anthropic-ai-native-sdlc-playbook"}, {"t": "Anthropic 官方文章", "u": "https://claude.com/blog/how-anthropic-secures-its-ai-native-software-development-lifecycle"}],
+         "prompt": "读 C:\\Users\\User\\Desktop\\AI-Native-SOP\\AI-Native开发SOP.md 和这次合同重做的全部记录，按 Anthropic AI-Native SDLC Playbook 的六个阶段重排成 SOP v1：每个阶段写清 Agent 做什么、人把关什么、交付物是什么，并标出这次实际卡住的地方。"},
+        {"t": "抽成黑客松模板，记下 10 条默会知识", "d": "把访谈提纲、评测集、方案、演示脚本抽成模板文件夹；再记 10 条这次学到的「没人写下来的规矩」，每条配这次的真实例子，放进 Agent-Shared\\knowledge\\pm-tacit.md。以后可以对照 Lenny's Newsletter、Shreyas Doshi、俞军《俞军产品方法论》继续攒。", "min": 60,
+         "links": [{"t": "Lenny's Newsletter", "u": "https://www.lennysnewsletter.com"}]}
+      ]
+    },
+    {
+      "id": "machinery", "group": "running", "status": "running", "order": 4, "handoff": "machinery",
+      "title": "中东工程机械：旋挖 Agent + 服务调度（平台以后）",
+      "includes": ["旋挖钻机 AI Agent 补完", "服务任务调度器", "工程机械行业聚合平台（吊车、泵车）"],
+      "summary": "同一个行业、同一批客户和同事：先做售后的服务派单调度（痛点最急、数据最好拿），售前的吊车泵车聚合平台放到后面验证。",
+      "why": "旋挖 Agent（参数查询、选型、英阿回复）本来就是售前的 AI 销售层，聚合平台是把它扩到吊车和泵车；调度器是售后。这是一条业务线的三个阶段。",
+      "where": "这台 xuanwu\\zoomlion-ai-sales-assistant\\Rorary drilling rig agent（GitHub hongjunmu79-debug/Rorary-drilling-rig-agent）；台式机 clone 后在 D:\\Claude Code 工作区\\projects\\rig-agent",
+      "effort": "调度器约一周；平台验证两周（以后）",
+      "done_when": "调度器：用一天的真实派单数据，排出来的方案比当天实际安排总车程更短，服务经理说能用。平台：和 5 个买家聊过，至少 1 个愿意为「远程看机 + 质量保证」付钱。",
+      "steps": [
+        {"t": "在台式机 clone 代码，贴启动提示词", "d": "Agent 会先告诉你旧版做到哪了，再设计一张派单数据收集表。", "min": 10,
+         "prompt": "你在台式机上接手「中东工程机械：旋挖 Agent + 服务调度」。\n1. 把 https://github.com/hongjunmu79-debug/Rorary-drilling-rig-agent.git clone 到 D:\\Claude Code 工作区\\projects\\rig-agent，读一遍，用 5 句话告诉我它已经能做什么、停在哪。\n2. 把 Agent-Shared\\templates\\HANDOFF_RULE.md 里的规则追加到本项目 CLAUDE.md 末尾（没有就新建，已有内容不要动）。\n3. 如果 Agent-Shared\\home\\prepared\\machinery.2.md 里已经有收集表，就在它基础上补；没有的话，设计一张「一天派单数据」收集表：case 的谷歌地图链接和故障类型、工程师常驻点和擅长（液压/电气）、处理快慢、当天车辆数；手机号和客户名打码。\n4. 按规则写出 Agent-Shared\\home\\handoff\\machinery.md，需要你一栏写「找服务经理要一天的派单记录」，然后停下来等我。"},
+        {"t": "要一天的真实派单数据", "delegate": "做一份派单数据收集表，外加一段发给服务经理的飞书消息。收集表分三张，用 markdown 表格写出表头和一行示例：当天的 case（编号、谷歌地图链接、所在酋长国、故障类型：液压/电气/其他、报修时间、工地可进入的时间、预计处理时长、当天实际派了谁、坐哪辆车）；工程师（编号、常驻点、擅长、熟练程度、处理快慢）；车辆（编号、停放点、有没有司机、能坐几个人）。手机号和客户名一律打码。消息要简短客气：用途是帮他排出更顺路的派单，只要过去某一天的记录。", "d": "找服务经理要某一天的飞书派单记录：15-20 个 case 的谷歌地图链接和故障类型，工程师常驻点（迪拜、阿布扎比、沙迦）和擅长，当天有几辆车。", "min": 20},
+        {"t": "把问题写成「车辆路径 + 时间窗 + 技能匹配」", "d": "Google 的 OR-Tools 有现成的车辆路径求解，支持时间窗、技能约束和接送（司机先送 A 到工地 1、自己去工地 B、中午回来接 A 吃饭）。", "min": 40,
+         "links": [{"t": "OR-Tools 车辆路径", "u": "https://developers.google.com/optimization/routing"}]},
+        {"t": "新旧方案对比", "d": "同一天的数据，对比实际派单和求解结果的总车程、最晚收工时间，做成一张表给服务经理看。", "min": 40},
+        {"t": "以后：聊 5 个吊车泵车买家，只问过去", "d": "阿联酋和埃及各列 5 个你认识的买家或代理，聊 5 个：「上次买吊车或泵车是怎么找到的？最担心什么？被坑过吗？」不推销。这是《The Mom Test》的问法。", "min": 20},
+        {"t": "以后：用手机把一台真机扫成 3D", "d": "Polycam 或 Luma 能把实物扫成 3D 高斯泼溅，发给买家看「远程看机」到底有没有用，再带着结果进孵化器。", "min": 40,
+         "links": [{"t": "Polycam", "u": "https://poly.cam"}, {"t": "Luma", "u": "https://lumalabs.ai"}]}
+      ]
+    },
+
+    {
+      "id": "transformer", "group": "learn", "status": "explore", "order": 1,
+      "title": "搞懂 Transformer：读论文、手搓一个、和人脑对照",
+      "includes": ["读《Attention Is All You Need》", "一天手搓一个大模型", "Transformer 与人脑的类比"],
+      "summary": "一条线走完：先读懂注意力，再亲手训练一个小模型，最后把你的三个人脑类比写成有出处的对照表。",
+      "why": "三件事是同一个学习过程的三段：理解、动手、反思。Karpathy 那个视频正好把论文和手搓连起来；类比放在最后，因为做过一遍才知道哪里像、哪里不像。",
+      "effort": "约两天，拆成 15-40 分钟一段",
+      "done_when": "不看资料能画出一个注意力头怎么算；你训练的小模型能接着写几句通顺的话；一页类比对照表。",
+      "steps": [
+        {"t": "先看图解，不碰公式", "d": "Jay Alammar 的《The Illustrated Transformer》，只看图。", "min": 20,
+         "links": [{"t": "The Illustrated Transformer", "u": "https://jalammar.github.io/illustrated-transformer/"}]},
+        {"t": "读论文第 3 节和图 1、图 2", "d": "公式看不懂就让 Claude 逐行讲，用一个 3 个词的句子手算一遍。", "min": 30,
+         "links": [{"t": "论文原文", "u": "https://arxiv.org/abs/1706.03762"}],
+         "prompt": "用中文逐行讲解《Attention Is All You Need》第 3.2 节的公式，再用一句 3 个词的句子手算一遍注意力，每一步都写出矩阵的形状。"},
+        {"t": "跟着 Karpathy 敲代码，敲到 self-attention", "d": "视频《Let's build GPT: from scratch, in code, spelled out》的前半段。", "min": 40,
+         "links": [{"t": "Let's build GPT（YouTube）", "u": "https://www.youtube.com/watch?v=kCc8FmEb1nY"}]},
+        {"t": "让 Claude 当面试官考你", "d": "用自己的话讲，让它追问，最后打分、指出理解漏洞。", "min": 15,
+         "prompt": "你当面试官，考我 Transformer 的注意力机制。一次只问一个问题，我答完你再追问；问完 5 轮后给我打分，并指出我理解上的漏洞。"},
+        {"t": "选 MiniMind，租一张显卡", "d": "MiniMind 是南大作者的开源项目，中文文档，用一张 3090 约 2 小时、租卡约 3 块钱从零训练一个几千万参数的小模型。笔记本没有 NVIDIA 显卡，在 AutoDL 按小时租一张。代码可以对照 Raschka 的 LLMs-from-scratch；想要更完整的版本，再看 Karpathy 的 nanochat。", "min": 30,
+         "links": [{"t": "MiniMind", "u": "https://github.com/jingyaogong/minimind"}, {"t": "AutoDL", "u": "https://www.autodl.com"}, {"t": "LLMs-from-scratch", "u": "https://github.com/rasbt/LLMs-from-scratch"}, {"t": "nanochat", "u": "https://github.com/karpathy/nanochat"}]},
+        {"t": "跑通预训练和对话微调", "d": "按 MiniMind 的 README 一步步跑，卡住就把报错原样贴给 Claude。", "min": 120},
+        {"t": "改一个地方看效果", "d": "比如把层数或训练数据减半，看输出变差多少，写下你的观察。", "min": 30},
+        {"t": "校准你的三个类比", "d": "数量级：人脑大约 860 亿个神经元、百万亿级突触，比「数亿」大好几个数量级，而且参数不等于突触。幻觉更像神经科学里的「虚构」（confabulation）：缺信息时自动编一个说得通的故事，还深信不疑。上下文窗口对 Baddeley 的工作记忆：人记得少但会主动压缩、遗忘，模型窗口大却不会主动遗忘。", "min": 40},
+        {"t": "写成对照表，再改成 1 分钟口播", "d": "口播稿可以直接拿去创作那一项做视频。", "min": 40,
+         "prompt": "根据我的三个类比（高维向量对神经元突触、模型幻觉对人在不确定时的迷茫、上下文窗口对短期记忆），写一张对照表：像在哪、不像在哪、出处；再改写成 1 分钟的口播脚本。"}
+      ]
+    },
+    {
+      "id": "harness", "group": "learn", "status": "explore", "order": 2,
+      "title": "我的 Harness：提示词、Skill、专家团怎么配",
+      "includes": ["Agent 系统提示词能不能改、A/B 测试", "同一 Skill 在不同模型上的影响", "Harness 方法论（Self-Harness）", "WorkBuddy 专家团迁移，对比 Codex Cloud"],
+      "summary": "四件事其实是一件：Harness 就是包在模型外面的那一层，包括提示词、Skill、专家设定、记忆和调度。把它们放在一张表里，一次 A/B 一次地调。",
+      "why": "Self-Harness 论文对 harness 的定义就包括提示词、工具、记忆和调度；你想研究的系统提示词、Skill、专家团，都是这一层的零件。你说的 so.md 应该是 SOUL.md。你觉得 WorkBuddy 对零基础好用，是因为它替你预设了视角，Claude 和 Codex 方向难把控，正好缺这一层。",
+      "where": "专家库 C:\\Users\\User\\dsh-expert-library（专家库.xlsx、专家库总览.md）",
+      "effort": "约一周，每次 30-60 分钟",
+      "done_when": "一页你自己的 Harness 规矩，至少 3 条用 A/B 验证过，并且在一个真实 Agent 上落地过。",
+      "steps": [
+        {"t": "先把分层画清楚", "d": "Claude Code：output styles 直接改系统提示词；CLAUDE.md 是作为用户消息放在系统提示词之后；--append-system-prompt 是追加；改完要 /clear 或开新会话才生效。Hermes：SOUL.md（默认在 ~/.hermes/SOUL.md）是核心人格，排在系统提示词最前面，项目规则放 AGENTS.md。Codex：项目规则读 AGENTS.md。", "min": 30,
+         "links": [{"t": "Claude Code output styles", "u": "https://code.claude.com/docs/en/output-styles"}, {"t": "Hermes 人格与 SOUL.md", "u": "https://hermes-agent.nousresearch.com/docs/user-guide/features/personality"}, {"t": "Hermes 各文件分工", "u": "https://hermes-agent.nousresearch.com/docs/user-guide/which-file-does-what"}]},
+        {"t": "听 Self-Harness 导读，读方法部分", "d": "论文叫《Self-Harness: Harnesses That Improve Themselves》。方法三步：从执行记录里归纳模型特有的失败模式；生成小而多样的修改；只保留在留出任务上也通过回归测试的改动。Datawhale 也有一个 Harness Engineering 开源教程，可以当补充（和论文是不是同一来源没确认）。", "min": 40,
+         "links": [{"t": "AlphaXiv 导读", "u": "https://www.alphaxiv.org/audio/2606.09498v1"}, {"t": "Datawhale self-harness", "u": "https://github.com/datawhalechina/self-harness"}]},
+        {"t": "从专家库挑 3 个专家，写成可移植的专家卡", "d": "每张卡四部分：角色、目标、检查清单、输出格式，写成 markdown。", "min": 40},
+        {"t": "把专家卡装进三个 Agent", "d": "Claude Code 里做成子代理（.claude/agents/ 下放一个 md 文件）；Codex 写进 AGENTS.md 的一节；DeepSeek Harness 按它的专家配置导入。", "min": 40},
+        {"t": "做一次 A/B", "d": "挑一个你常做的真实任务（比如写一段 PRD），默认的跑 3 次，加了专家卡或规则的跑 3 次。按三条打分：有没有跑偏方向、要你返工几次、读起来顺不顺。", "min": 60},
+        {"t": "同一个 Skill 在三个模型上各跑 3 个案例", "d": "Claude、DeepSeek、Codex，同样的输入；准确、守规矩、风格三项各 1-5 分。差距最大的那几条规则，就是要分模型写的地方。要批量跑可以用 promptfoo。", "min": 60,
+         "links": [{"t": "promptfoo", "u": "https://www.promptfoo.dev"}]},
+        {"t": "用 Self-Harness 的办法修一个真实 Agent", "d": "挑 Hermes 一个常出错的角色（比如 inforadar 卡在 running），收集 5 次失败记录。", "min": 60,
+         "prompt": "这是我的 Agent 最近 5 次失败的记录。请按 Self-Harness 的思路：1. 归纳失败模式；2. 提 3 个尽量小的规则修改；3. 每个修改配一个回归测试用例，说明怎么判断它有没有让情况变好。"},
+        {"t": "写下你的 Harness 规矩 v1", "d": "比如：人格放 SOUL.md，项目规矩放 AGENTS.md 或 CLAUDE.md，一次性的要求直接说；固定模型版本；每次只改一条；改完跑同一组测试。顺带写清 WorkBuddy 和 Codex Cloud 用起来的区别。", "min": 30}
+      ]
+    },
+    {
+      "id": "ai-learning", "group": "learn", "status": "explore", "order": 3,
+      "title": "AI 原生的学习与研究方式",
+      "includes": ["AI 原生的新学习范式", "科学家怎么用 Claude"],
+      "summary": "先看科学家怎么让 Claude 进到研究流程里，再在你自己的学习上试几种方式，留下最适合你的。",
+      "why": "两件事问的是同一个问题：有了 AI 以后，人该怎么学、怎么研究。Anthropic 那篇是案例文章，不是正式论文；这个首页本身也是一次试验：每项都有具体步骤、做完的标准和一个产出。",
+      "effort": "两周里顺手试",
+      "done_when": "试过 3 种方式，写下哪种最适合你、为什么。",
+      "steps": [
+        {"t": "读科学家用 Claude 的案例", "d": "Anthropic 2026 年 1 月 15 日的文章《How scientists are using Claude to accelerate research and discovery》，在 anthropic.com 搜标题；再看 6 月 30 日上线的 Claude Science 的报道。", "min": 45,
+         "links": [{"t": "Claude Science（MIT Technology Review）", "u": "https://www.technologyreview.com/2026/06/30/1139987/claude-science-is-anthropics-newest-flagship-product/"}]},
+        {"t": "摘 3 个用法，用 1 个到你的学习上", "d": "比如「先让 Claude 读完一批资料再提假设」。", "min": 20},
+        {"t": "试一次「让你动手」", "d": "Claude Code 自带 Learning 输出风格，会留一部分代码让你自己写。在搞懂 Transformer 的手搓那一段用。", "min": 20},
+        {"t": "试一次「反过来教」", "d": "你来讲，让 Claude 扮演听不懂的学生追问。", "min": 15,
+         "prompt": "你扮演一个完全不懂的学生，我来给你讲一个概念。你只能提问，不能纠正我；等我讲完，再告诉我哪里讲得不清楚。"},
+        {"t": "写下你的学习方式 v1", "d": "哪种让你记得最牢、哪种最不费劲。", "min": 20}
+      ]
+    },
+    {
+      "id": "harmonyos", "group": "learn", "status": "explore", "order": 4,
+      "title": "鸿蒙上跑大模型",
+      "includes": ["鸿蒙系统跑模型的能力和花费"],
+      "summary": "测鸿蒙设备跑模型的能力和花费（32G 内存）；现在好像只允许跑自家模型，看能不能跑别的、挂出一个接口。",
+      "why": "32G 内存理论上够跑 8B 左右的量化模型，问题在系统开不开放。先摸清两条路：官方的端侧能力，和在虚拟机里跑。如果合同项目的甲方有国产化要求，这个测试还能顺带回答「本地模型能不能跑在国产设备上」。",
+      "where": "你的鸿蒙设备（Antigravity 的盘点里提到一台鸿蒙铠大师 VM）",
+      "effort": "约 2 小时",
+      "done_when": "一张表：每种方式能跑哪些模型、每秒出多少字、占多少内存、能不能给别的程序调用。",
+      "steps": [
+        {"t": "查官方开放了什么", "d": "在华为开发者文档搜「端侧大模型」，看鸿蒙给第三方开放了哪些模型接口。", "min": 30,
+         "links": [{"t": "华为开发者", "u": "https://developer.huawei.com/consumer/cn/"}]},
+        {"t": "在虚拟机里试 Ollama", "d": "如果铠大师 VM 是 Windows 或 Linux，装 Ollama 跑一个 8B 量化模型，记下速度和内存。", "min": 40,
+         "links": [{"t": "Ollama", "u": "https://ollama.com"}]},
+        {"t": "测能不能当接口用", "d": "Ollama 默认在 127.0.0.1:11434 提供接口，试试从另一台电脑能不能调到。", "min": 20}
+      ]
+    },
+    {
+      "id": "math-fun", "group": "learn", "status": "explore", "order": 5, "light": true,
+      "title": "数学里有趣的点",
+      "includes": ["几何、空间、自然界中的数学"],
+      "summary": "向日葵的螺旋、蜂巢的六边形、海岸线的分形。",
+      "why": "纯好玩，精力低的时候也能看；线性代数那一集还能直接帮你理解 Transformer 里的向量。",
+      "effort": "每次 15-20 分钟",
+      "done_when": "看完 3 个主题，并用一段 Python 画出一个分形。",
+      "steps": [
+        {"t": "3Blue1Brown《线性代数的本质》第 1 集", "d": "向量到底是什么。B 站搜 3Blue1Brown 有中文字幕版。", "min": 15,
+         "links": [{"t": "3Blue1Brown 线性代数", "u": "https://www.3blue1brown.com/topics/linear-algebra"}]},
+        {"t": "向日葵为什么是 137.5 度", "d": "搜「黄金角 向日葵 螺旋」，看斐波那契数列怎么长在花盘上。", "min": 15},
+        {"t": "蜂巢为什么是六边形", "d": "这个「蜂巢猜想」直到 1999 年才被数学家黑尔斯严格证明。", "min": 15},
+        {"t": "画一个分形", "d": "让 Claude 写 20 行 Python 画曼德博集合，改改颜色。", "min": 20,
+         "prompt": "写一段 20 行左右的 Python，用 matplotlib 画曼德博集合，配色要好看，并告诉我改哪个数字能放大到边缘细节。"}
+      ]
+    },
+
+    {
+      "id": "personal-os", "group": "system", "status": "explore", "order": 1,
+      "title": "个人工作台：今天、待办、想法只要一个来源",
+      "includes": ["待办工作台（已完成，想扩展）", "想法记录系统（飞书、Telegram、微信发给 Hermes）", "灵感速记（星空思维导图）", "思维收集器硬件", "ESP32「坐下即知」", "实体指挥台的「今日任务」"],
+      "summary": "你已经有好几个「今天该做什么」了：Hermes 的每日任务卡、实体指挥台的今日任务、待办工作台，加上这个首页。它们应该是同一件事：一个来源，多个出口。",
+      "why": "入口（首页记一笔、手机发给 Hermes、桌上按住说话）、存储（这个首页的数据）、视图（首页、星空图、Mosaico 小屏）、出口（手机日历和手表）。分开做，就是四套互不相通的待办。坐下即知已经由这个首页做了软件版。",
+      "where": "首页 Agent-Shared\\home；待办工作台在台式机（路径待确认）；Hermes 在台式机 D:\\hermes-agents\\life",
+      "effort": "每一段 30-90 分钟，按顺序接",
+      "done_when": "只在一个地方改「今天」，手机日历、手表、Mosaico 小屏都跟着变；手机发一句「记个想法」就出现在首页。",
+      "steps": [
+        {"t": "这一周「今天」只看首页", "d": "Hermes 的任务卡、指挥台的今日任务、待办工作台先都不管，只用首页一周，看它够不够用。", "min": 5},
+        {"t": "接手机入口：给 Hermes 加「记个想法」", "d": "收到「记个想法」开头的消息，就往 Agent-Shared\\home\\events-hermes.jsonl 追加一行；格式见 home\\README.md。先在现有的 life 角色里加，不用单开 profile；用一周觉得乱再单开。", "min": 30,
+         "prompt": "在 D:\\hermes-agents\\life 里给 Hermes 加一个技能：消息以「记个想法」开头时，按 D:\\Claude Code 工作区\\knowledge\\Agent-Shared\\home\\README.md 里的事件格式，往同目录的 events-hermes.jsonl 追加一行 type 为 idea 的事件，然后回复「记下了」。"},
+        {"t": "让待办工作台和 Hermes 任务卡读首页的「今天」", "d": "首页有接口 http://localhost:8777/api/today。待办工作台读它同步到手机日历和手表；Hermes 的每日任务卡改成转发它。", "min": 60,
+         "prompt": "我的首页在 http://localhost:8777/api/today 提供「今天」的三件事（JSON）。请把待办工作台改成每天读这个接口，把三件事同步到手机日历和手表；再把 Hermes 的每日任务卡改成直接转发这三件事，不再自己生成。"},
+        {"t": "星图：先玩交互原型，说哪一下不对", "d": "双击打开 Agent-Shared\\home\\star\\proto\\star-proto.html，玩 5 分钟：拖着想法甩出去、按住线的中间像弹弓那样拉（拉满松手会弹出东西）、双击想法长出可能性、点虚线留下、Esc 收起。回来只说一句：哪一下不对。过了以后按 home\\star\\DESIGN.md 分四期并进首页。", "min": 10},
+        {"t": "Mosaico 小屏显示「今天」，按住说话记想法", "d": "需要先给首页开局域网访问。Mosaico 有麦克风就直接用，没有就加一个 I2S 麦克风模块；录音转文字后写进 events-mosaico.jsonl。", "min": 90}
+      ]
+    },
+    {
+      "id": "hub", "group": "system", "status": "paused", "order": 2,
+      "title": "Super Agent Hub：情报雷达、孵化器、思考帽",
+      "includes": ["Super Agent Hub 的情报雷达（接卡兹克的 AI hot）", "Super Agent Hub 的孵化器", "实体指挥台的思考帽风暴"],
+      "summary": "系统已经在跑，要做的只有三件小事：情报雷达接 AI hot、孵化器加一条「先接触再推演」的规矩、思考帽产出只看蓝帽总结。",
+      "why": "它的四个模块各有更大的归属：一键备课归到中东学校，狼人杀和阿瓦隆归到线下陌生人局，今日任务归到个人工作台。Hub 本身只剩维护。孵化器不缺功能缺新信息：ESP32 那次推演自己都写了「分析已饱和，0 次用户接触」。",
+      "where": "台式机的情报流水线；关注词在 Agent-Shared\\config\\intel_watchlist.json",
+      "effort": "约 1.5 小时",
+      "done_when": "某天 07:00 的情报日报里有来自 AI hot 的条目；孵化器在没有真实接触记录时不再推第二轮。",
+      "steps": [
+        {"t": "看 AI hot 有没有 RSS 或接口", "delegate": "打开 https://aihot.virxact.com ，查它有没有 RSS、JSON 接口，或者每日日报的固定地址。写出找到的地址、返回内容的样例（前几条）、更新频率；都没有的话，写清每日日报页面的结构，方便情报雷达直接抓。", "d": "AI hot 从 168 个精选信源里筛 AI 动态，有每日日报，网站不用注册。看页面底部或源码里有没有 RSS 或 JSON。", "min": 15,
+         "links": [{"t": "AI hot", "u": "https://aihot.virxact.com"}]},
+        {"t": "接进情报雷达", "d": "有接口就加信源，没有就每天抓日报页；一周后如果和原来的情报重复很多，就只留它的日报。", "min": 40,
+         "prompt": "给我的情报雷达流水线加一个信源：AI hot（https://aihot.virxact.com）。先检查它有没有 RSS 或 JSON 接口；有就按接口接入，没有就每天抓它的日报页。接入后在 07:00 的日报里单独标出来自 AI hot 的条目。"},
+        {"t": "孵化器加「先接触再推演」", "d": "同一个想法推第二轮之前，必须先录入一条真实接触记录（访谈要点或试卖结果）。", "min": 30,
+         "prompt": "给孵化器加一条规则：同一个构想要跑第二轮推演之前，必须先录入一条真实接触记录（访谈要点或试卖结果），没有就提示「先去接触一个真实用户」，不再推演。"},
+        {"t": "思考帽产出只看蓝帽", "d": "已经攒了 47 份。以后只看蓝帽总结，其他帽子的产出当素材，不当待读。", "min": 15}
+      ]
+    },
+    {
+      "id": "voice", "group": "system", "status": "paused", "order": 3,
+      "title": "Hermes 实时语音前台（含桌宠）",
+      "includes": ["Hermes 实时对话前台（MOS Live）", "接到桌面、结合 ESP32 做桌宠"],
+      "summary": "Hermes 启动要十几到二十秒，不是实时对话；用实时语音模型做前台，接到桌面，再给它一个 ESP32 桌宠的外壳。",
+      "why": "这其实就是 DeepSeek Super Agent 的结构：反应快的前台负责对话，慢的 Agent 在后面干活，做完再汇报。你电脑里已经有前身：vp-duplex（219 次提交，9/5 之后没动）和 vp-voice-pet-audit。",
+      "where": "这台 C:\\Users\\User\\Documents\\桌面归档\\项目代码\\vp-duplex、C:\\Users\\User\\claudeeee\\vp-voice-pet-audit；台式机的 L6 语音工作台",
+      "effort": "先摸底 1 小时",
+      "done_when": "你说一句话，1 秒内有回应；长任务交给 Hermes，做完主动告诉你。",
+      "steps": [
+        {"t": "先看 vp-duplex 做到哪了", "d": "让 Claude 读一遍仓库，用 5 句话告诉你它已经能做什么、卡在哪。", "min": 20,
+         "prompt": "读 C:\\Users\\User\\Documents\\桌面归档\\项目代码\\vp-duplex，用 5 句话告诉我：它已经实现了什么、最后停在哪、离「实时语音前台，长任务交给 Hermes」还差什么。"},
+        {"t": "量一下 Hermes 的 20 秒花在哪", "d": "是启动、模型响应，还是工具调用？", "min": 20},
+        {"t": "试模思智能的 MOSS-Live", "d": "你说的「摩斯智能 MOS Live」应该是它：全双工实时对话。第三方资料说 API 限时免费，以官网为准。", "min": 30,
+         "links": [{"t": "MOSS-Live 介绍", "u": "https://ai-bot.cn/moss-live/"}]},
+        {"t": "做前台加后台的原型", "d": "前台秒回、能接话；需要真干活时把任务丢给 Hermes，完成后用语音告诉你。桌宠外壳等原型顺了再做。", "min": 90}
+      ]
+    },
+
+    {
+      "id": "content", "group": "create", "status": "explore", "order": 1, "light": true,
+      "title": "内容创作：先蒸馏出你的风格，再做浮萍生活 vlog",
+      "includes": ["博主基础测试", "蒸馏一个人", "AI 生图和视频工作流（Higgsfield）", "浮萍生活的 AI 音乐和 vlog"],
+      "summary": "一条从想法到作品的线：先用你自己的帖子和评论蒸馏出你的风格，再让 AI 用这个风格把语音想法写成内容；同一批素材做成一期浮萍生活 vlog。",
+      "why": "博主测试要的是「像你」，蒸馏一个人正好提供这个；生图、视频、音乐是 vlog 的工具，不是三个项目。蒸馏先从你自己开始：最快看出效果，也不碰别人的隐私，收集他人信息需要对方同意。你说的 GPT image 2.6 我没查到这个版本号；Higgsfield 上能用的是 GPT Image 2，免费额度只在活动期间，ChatGPT 免费账号据说也能用。",
+      "effort": "两三个晚上",
+      "done_when": "发出去一条你不嫌弃的内容，再做出一期 60 秒、配你自己写词的歌的 vlog。",
+      "steps": [
+        {"t": "蒸馏出你自己的风格", "d": "把你发过的帖子和评论复制或导出 50 条，让 Claude 总结。", "min": 45,
+         "prompt": "下面是我自己发过的 50 条帖子和评论。请总结我的观点倾向、语气、常聊的话题和口头禅，写成一页「我的风格卡」；再用这个风格回答 3 个问题，让我看看像不像我。"},
+        {"t": "把语音想法写成一条内容，发出去", "d": "录 3 段 1 分钟的语音，用飞书妙记、讯飞听见或 Whisper 转文字，再让 Claude 用你的风格卡改成一条小红书笔记。", "min": 40,
+         "prompt": "这是我的风格卡和一段语音转写。保持我的语气，把转写改成一条小红书笔记，不要加我没说过的观点。"},
+        {"t": "生 3 张浮萍生活的图", "d": "出租屋、地铁末班车、外卖箱。用 ChatGPT 或 Higgsfield 都行。", "min": 20,
+         "links": [{"t": "Higgsfield", "u": "https://higgsfield.ai"}]},
+        {"t": "图转视频", "d": "用可灵或 Higgsfield 的视频模型，每张 5 秒。", "min": 20,
+         "links": [{"t": "可灵", "u": "https://klingai.com"}]},
+        {"t": "写 8 行词，用 Suno 生成 3 版", "d": "只写真实的细节（合租屋的门锁、凌晨的外卖）。可以让 Claude 帮你押韵，但别让它替你写内容。", "min": 50,
+         "links": [{"t": "Suno", "u": "https://suno.com"}]},
+        {"t": "剪成 60 秒 vlog", "d": "剪映自动配字幕，配上你的歌。", "min": 40}
+      ]
+    },
+
+    {
+      "id": "offline-social", "group": "pool", "status": "pool", "order": 1,
+      "title": "线下陌生人局：NFC 游戏 + 只用标签认识人",
+      "includes": ["线下互动娱乐交友 station", "新身份认同社交中心", "实体指挥台的狼人杀、阿瓦隆（20 张 NFC 卡）"],
+      "summary": "三个想法其实是一个场子：陌生人来玩你用 ESP32 当法官的 NFC 狼人杀和阿瓦隆，自我介绍只能用 3 个标签、不准说职业。",
+      "why": "交友 station 需要一个破冰的玩法，NFC 游戏正好是；「不按技能和身份、只用标签」正好是这个场子的社交规则。一场周五局就能同时验证三件事。",
+      "where": "狼人杀代码 C:\\Users\\User\\claudeeee\\.nfc-inspect\\werewolf-src；硬件桥接在台式机",
+      "effort": "两周，办 2 场",
+      "done_when": "办完两场陌生人局：ESP32 当法官全程没卡住，而且有人愿意再掏钱来第二次。",
+      "steps": [
+        {"t": "局前自己拿 6 张卡走一遍", "d": "发身份、天黑请闭眼，把整个流程跑通。", "min": 30},
+        {"t": "去 2 家同类店各待一晚", "d": "剧本杀、桌游吧或陌生人社交酒馆。记下谁在玩、花多少钱、哪里尴尬。", "min": 120},
+        {"t": "办一场「周五陌生人桌游局」", "d": "每人收三五十块；自我介绍只用 3 个标签；NFC 卡发身份，ESP32 当法官。", "min": 180},
+        {"t": "结束问一句「下次还来吗」，只修前 3 个问题", "d": "下一局前只修最影响体验的 3 个。", "min": 30},
+        {"t": "带着结果进孵化器", "d": "有了真实信息再推演。", "min": 10}
+      ]
+    },
+    {
+      "id": "advanced-chess", "group": "pool", "status": "pool", "order": 2, "light": true,
+      "title": "Advanced Chess 小游戏",
+      "includes": ["Advanced Chess：人在 AI 辅助下控制 AI 下棋"],
+      "summary": "人拿主意，AI 出候选。这个玩法是卡斯帕罗夫 1998 年提出的人机合作棋，不是 Google 做的。",
+      "why": "先自己玩一局，体验这个玩法爽在哪，再决定做成什么样的游戏。",
+      "effort": "体验 30 分钟；原型一个周末",
+      "done_when": "在自己的原型里完整下完一局。",
+      "steps": [
+        {"t": "先体验一局", "d": "在 Lichess 的分析棋盘打开引擎，每步看它的前三个推荐再自己选。", "min": 30,
+         "links": [{"t": "Lichess 分析棋盘", "u": "https://lichess.org/analysis"}]},
+        {"t": "想清楚你的玩法哪里不一样", "d": "比如三个性格不同的 AI 顾问（激进、稳健、爱骗招）给建议，你来拍板。", "min": 15},
+        {"t": "做原型", "d": "python-chess 加 Stockfish，让 Claude 搭一个网页棋盘。", "min": 120,
+         "links": [{"t": "python-chess", "u": "https://github.com/niklasf/python-chess"}, {"t": "Stockfish", "u": "https://stockfishchess.org"}]}
+      ]
+    },
+    {
+      "id": "earplugs", "group": "pool", "status": "pool", "order": 3,
+      "title": "贴合耳廓的降噪耳塞",
+      "includes": ["贴合耳朵轮廓、无感、降噪比业界好的耳塞"],
+      "summary": "戴着无感，降噪比现在业界的都好。",
+      "why": "硬件门槛高，先花几十块钱把「贴合」和「降噪」两件事各自体验清楚，再判断机会在哪。",
+      "effort": "一周，几十到几百块",
+      "done_when": "对比 3 种现有方案后，写清楚现有产品差在哪。",
+      "steps": [
+        {"t": "买 3 种对比", "d": "普通泡棉耳塞（比如 3M）、可塑硅胶耳塞、Loop 这类造型耳塞。", "min": 15},
+        {"t": "每种戴一晚，用手机分贝 App 粗测", "d": "记下舒适度和降噪感受。", "min": 15},
+        {"t": "问一下定制耳模", "d": "助听器店能取耳模，问价格和周期。这就是「贴合耳廓」的现成做法。", "min": 20}
+      ]
+    },
+    {
+      "id": "earth-online", "group": "pool", "status": "pool", "order": 4, "light": true,
+      "title": "地球 Online",
+      "includes": ["地球 Online：深度体验的游戏"],
+      "summary": "一个深度体验的游戏：把真实生活当成一款游戏来玩。",
+      "why": "这个点子最宽，先写成一页，看最打动你的是哪一块。",
+      "effort": "1 小时",
+      "done_when": "一页概念：玩家是谁、一局玩什么、为什么好玩。",
+      "steps": [
+        {"t": "写一页概念", "delegate": "写一页「地球 Online」的游戏概念：目标玩家、核心循环、一局 30 分钟玩什么、和 Pokémon GO、Habitica 有什么不同，最后列出 3 个最值得先验证的假设。", "d": "", "min": 20,
+         "prompt": "帮我把「地球 Online」写成一页游戏概念：目标玩家、核心循环、一局 30 分钟玩什么，以及和 Pokémon GO、Habitica 有什么不同。"},
+        {"t": "玩 2 个最接近的产品各 10 分钟", "d": "比如 Pokémon GO（现实地图）、Habitica（把生活做成 RPG）。", "min": 20},
+        {"t": "丢进孵化器", "d": "", "min": 10}
+      ]
+    },
+
+    {
+      "id": "cc-remote", "group": "frozen", "status": "frozen", "order": 1,
+      "title": "cc-remote",
+      "includes": ["cc-remote（手机远程控制 Claude Code）"],
+      "summary": "自建的手机远程控制 Claude Code；体感一般、不稳定，基本不用了。",
+      "why": "已改成主机 + 遥控：用 Claude 自带的 Remote Control 接会话。",
+      "where": "这台 C:\\Users\\User\\cc-remote-native-pager、C:\\Users\\User\\claudeeee\\cc-remote-native-pager（两份副本）；台式机 D:\\cc-remote-verify",
+      "effort": "",
+      "done_when": "决定停掉还是保留。",
+      "steps": [
+        {"t": "决定要不要停掉后台任务", "d": "cc-remote-relay 和 cc-remote-wrapper 两个计划任务还在这台后台跑。不用的话，可以让 Claude 帮你停掉，之后随时能恢复。", "min": 10}
+      ]
+    },
+    {
+      "id": "job-search", "group": "frozen", "status": "frozen", "order": 2,
+      "title": "求职相关",
+      "includes": ["job-search-assistant", "career-ops"],
+      "summary": "job-search-assistant（9/28 后没动，78 处改动没提交）和 career-ops。",
+      "why": "你这次的清单里没提它。如果求职还是你最重要的事，它应该放进在跑；如果不是，就让它安心冻结，别一直挂着。",
+      "where": "C:\\Users\\User\\Documents\\工作整理\\job-search-assistant；C:\\Users\\User\\.openhuman\\users\\6a1dfd9a1928328a9feb7fe3\\workspace\\career-ops",
+      "effort": "",
+      "done_when": "你定下它是在跑还是冻结。",
+      "steps": [
+        {"t": "定一下", "d": "点「升级成在跑」，或者就留在这里。", "min": 2}
+      ]
+    }
+  ]
+}

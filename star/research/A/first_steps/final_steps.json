@@ -1,0 +1,98 @@
+[
+ {
+  "rid": "r01",
+  "unit": "home:harmonyos:0",
+  "step": "如果现在在电脑前，就打开华为开发者文档搜「端侧大模型」（约10分钟）",
+  "votes": 3,
+  "round": 1,
+  "keep": true
+ },
+ {
+  "rid": "r02",
+  "unit": "home:harness:0",
+  "step": "如果现在在电脑前，就打开笔记写下三层标题：系统提示词/用户消息/追加（约5分钟）",
+  "votes": 3,
+  "round": 1,
+  "keep": true
+ },
+ {
+  "rid": "r03",
+  "unit": "home:land-lease:0",
+  "step": "如果坐到台式机前，就打开终端把 land-lease 仓库 git clone 到本地（约10分钟）",
+  "votes": 3,
+  "round": 2,
+  "keep": true
+ },
+ {
+  "rid": "r04",
+  "unit": "home:lyrics:0",
+  "step": "如果坐到台式机前，就打开演唱会歌词同步器会话并粘贴启动提示词（约5分钟）",
+  "votes": 3,
+  "round": 2,
+  "keep": true
+ },
+ {
+  "rid": "r05",
+  "unit": "home:math-fun:0",
+  "step": "如果现在在电脑前，就打开B站搜3Blue1Brown线性代数第1集（约3分钟）",
+  "votes": 3,
+  "round": 1,
+  "keep": true
+ },
+ {
+  "rid": "r06",
+  "unit": "home:transformer:0",
+  "step": "如果现在在电脑前，就打开《The Illustrated Transformer》只看图（约10分钟）",
+  "votes": 3,
+  "round": 1,
+  "keep": true
+ },
+ {
+  "rid": "r07",
+  "unit": "hz:19993e47aab4",
+  "step": "如果现在在手机旁，就打开音乐App搜队长《碎碎念》加入歌单（约5分钟）",
+  "votes": 3,
+  "round": 1,
+  "keep": true
+ },
+ {
+  "rid": "r08",
+  "unit": "hz:34b4c453c675",
+  "step": "如果现在在电脑前，就新建文档写下Q4复盘会六个子任务清单（约10分钟）",
+  "votes": 3,
+  "round": 1,
+  "keep": true
+ },
+ {
+  "rid": "r09",
+  "unit": "hz:42b3b521bfc5",
+  "step": "如果现在在电脑前，就打开Comma的GitHub仓库README页（约5分钟）",
+  "votes": 3,
+  "round": 1,
+  "keep": true
+ },
+ {
+  "rid": "r10",
+  "unit": "hz:a095084023bb",
+  "step": "如果现在在手机旁，就搜索 Agent RL 的原理确认正确写法（约3分钟）",
+  "votes": 3,
+  "round": 2,
+  "keep": true
+ },
+ {
+  "rid": "r11",
+  "unit": "hz:a6d9c85aedcc",
+  "step": "如果现在在电脑前，就打开arXiv搜2608.27287并收藏（约5分钟）",
+  "votes": 3,
+  "round": 1,
+  "keep": true
+ },
+ {
+  "rid": "r12",
+  "unit": "hz:b3e599fe96be",
+  "step": "如果现在在手机旁，就给某哥发消息问「那件事进展如何」（约3分钟）",
+  "votes": 3,
+  "round": 1,
+  "keep": true
+ }
+]

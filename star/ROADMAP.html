@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>星图 整体规划</title>
+<style>
+:root{
+  --bg:#fbfaf8; --fg:#1d1d1f; --muted:#6b6b72; --card:#ffffff; --line:#e6e3dc;
+  --accent:#3b5bdb; --accent-soft:#edf0ff; --ok:#2b8a3e; --ok-soft:#e6f6ea;
+  --next:#c25e00; --next-soft:#fff1e0; --later:#6c757d; --later-soft:#eef0f2; --code:#f1efe9;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14151a; --fg:#ececf1; --muted:#9a9aa6; --card:#1c1e25; --line:#2a2d36;
+    --accent:#8da2ff; --accent-soft:#222842; --ok:#69db7c; --ok-soft:#1c2e22;
+    --next:#ffa94d; --next-soft:#35291a; --later:#adb5bd; --later-soft:#25272e; --code:#262932;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14151a; --fg:#ececf1; --muted:#9a9aa6; --card:#1c1e25; --line:#2a2d36;
+  --accent:#8da2ff; --accent-soft:#222842; --ok:#69db7c; --ok-soft:#1c2e22;
+  --next:#ffa94d; --next-soft:#35291a; --later:#adb5bd; --later-soft:#25272e; --code:#262932;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font:16px/1.75 -apple-system,"Segoe UI","Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+}
+main{max-width:800px; margin:0 auto; padding:24px 16px 72px}
+h1{font-size:1.7rem; line-height:1.3; margin:0 0 4px}
+h2{font-size:1.25rem; margin:2.2em 0 .6em; padding-top:.2em}
+h3{font-size:1.05rem; margin:1.6em 0 .4em}
+p{margin:.5em 0}
+ul,ol{margin:.4em 0 .8em; padding-left:1.4em}
+li{margin:.25em 0}
+code{background:var(--code); padding:.08em .38em; border-radius:4px; font-size:.9em; word-break:break-word}
+.meta{color:var(--muted); font-size:.92rem; margin-bottom:1.2em}
+.card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin:12px 0}
+.tldr{border-left:5px solid var(--accent); background:var(--accent-soft)}
+.tldr p{margin:.35em 0}
+.tldr b{color:var(--accent)}
+.chip{display:inline-block; font-size:.78rem; line-height:1; padding:.32em .6em; border-radius:999px; margin:0 .35em .2em 0; vertical-align:middle; white-space:nowrap}
+.chip.ok{background:var(--ok-soft); color:var(--ok)}
+.chip.next{background:var(--next-soft); color:var(--next)}
+.chip.later{background:var(--later-soft); color:var(--later)}
+.flow{display:grid; gap:10px; grid-template-columns:1fr}
+@media (min-width:700px){ .flow{grid-template-columns:1fr 1.15fr 1fr; align-items:stretch} }
+.flow .col{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px}
+.flow .col h4{margin:0 0 6px; font-size:.95rem; color:var(--muted); font-weight:600}
+.flow .col.core{border-color:var(--accent); background:var(--accent-soft)}
+.flow .col ul{margin:0; padding-left:1.1em; font-size:.95rem}
+.flow .arrow{display:none}
+.note{color:var(--muted); font-size:.92rem}
+.phase{display:grid; grid-template-columns:2.4rem 1fr; gap:10px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin:10px 0}
+.phase.now{border-color:var(--next); box-shadow:0 0 0 2px var(--next-soft)}
+.phase .n{width:2.1rem; height:2.1rem; border-radius:50%; background:var(--later-soft); color:var(--later); display:flex; align-items:center; justify-content:center; font-weight:700}
+.phase.done .n{background:var(--ok-soft); color:var(--ok)}
+.phase.now .n{background:var(--next-soft); color:var(--next)}
+.phase h3{margin:0 0 2px; font-size:1.02rem}
+.phase p{margin:.2em 0; font-size:.95rem}
+.phase .who{color:var(--muted); font-size:.88rem}
+details{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:2px 16px; margin:10px 0}
+summary{cursor:pointer; padding:10px 0; font-weight:600}
+details[open] summary{border-bottom:1px solid var(--line); margin-bottom:8px}
+.two{display:grid; gap:10px; grid-template-columns:1fr}
+@media (min-width:700px){ .two{grid-template-columns:1fr 1fr} }
+.yes,.no{border-radius:12px; padding:10px 14px; font-size:.95rem}
+.yes{background:var(--ok-soft)} .no{background:var(--later-soft)}
+.yes h4,.no h4{margin:0 0 4px; font-size:.95rem}
+.yes ul,.no ul{margin:0; padding-left:1.1em}
+.decide{border-left:5px solid var(--next); background:var(--next-soft)}
+.warn{border-left:5px solid #c92a2a; background:rgba(201,42,42,.08)}
+footer{margin-top:2.5em; color:var(--muted); font-size:.88rem; border-top:1px solid var(--line); padding-top:1em}
+</style>
+</head>
+<body>
+<main>
+
+<h1>星图 · 整体规划与第 2 期方案</h1>
+<div class="meta">2026-11-09 · 第 1 期已做完 · 下一步：第 2 期（等你说「往下做」）</div>
+
+<div class="card tldr">
+  <p><b>要做什么</b>：手机、电脑上随手记下的想法，都汇到首页那个「想法池」；星图把这个池子摊成一张图，让你看出联系、顺着往下想。</p>
+  <p><b>现在在哪</b>：原型（手感）和第 1 期（随手收）都做完了。台式机的热键你已经装好，手机也测过一条想法。</p>
+  <p><b>下一步（第 2 期）</b>：把原型里的假数据换成你的真数据——19 件事当 19 个星座、想法池里的想法落进去，新想法一来就当着你的面落下，并长出几条可能性。这一期只「看」和「记新想法」，不碰首页，不保存连线。</p>
+  <p><b>你要做的</b>：第 2 期做完后，打开一个网址看 5 分钟。在那之前不用你做什么。</p>
+</div>
+
+<h2>一、整体怎么搭</h2>
+<div class="flow">
+  <div class="col">
+    <h4>入口（只管记下，不分类）</h4>
+    <ul>
+      <li>手机发给 Hermes（微信 / 飞书）</li>
+      <li>电脑任何窗口按 Ctrl+Alt+J</li>
+      <li>Claude Code 里说「记个想法」</li>
+      <li>首页「记一笔」、星图输入框</li>
+    </ul>
+  </div>
+  <div class="col core">
+    <h4>想法池（唯一来源）</h4>
+    <ul>
+      <li>首页的事件文件 <code>events-*.jsonl</code>，Syncthing 双机同步</li>
+      <li>Horizon 收件箱里的想法由「桥」每 5 分钟只读同步进来</li>
+      <li>一个文件只有一个写入方，不会冲突</li>
+    </ul>
+  </div>
+  <div class="col">
+    <h4>看的地方</h4>
+    <ul>
+      <li>首页：今天做什么、想法池</li>
+      <li>星图：想法摊成图，看联系、长出可能性</li>
+      <li>Horizon：待办、提醒、日历（不改，只读接入）</li>
+    </ul>
+  </div>
+</div>
+<p class="note">三个系统各管各的：Horizon 管待办和提醒，首页管「今天」，星图管想法。星图是首页的第二个页面，不另起新应用、新服务。</p>
+
+<h2>二、五期总览</h2>
+
+<div class="phase done"><div class="n">0</div><div>
+  <h3>交互原型 <span class="chip ok">已完成</span></h3>
+  <p>手感都能上手试：拖着甩、磁吸、弹弓拉线、想法长出可能性、挑着留下。2D 为主，3D 融合版另存一页。</p>
+  <p class="who">你试过、点过头；示例数据，还不是真数据。</p>
+</div></div>
+
+<div class="phase done"><div class="n">1</div><div>
+  <h3>随手收 + 接上 Horizon <span class="chip ok">已完成，等你收</span></h3>
+  <p>电脑任何窗口 Ctrl+Alt+J；Claude Code 里说「记个想法」；手机发给 Hermes；Horizon 收件箱里的想法 5 分钟内也进想法池。</p>
+  <p class="who">你已装好台式机热键，手机测过「记个想法：测试」，进了想法池。</p>
+</div></div>
+
+<div class="phase now"><div class="n">2</div><div>
+  <h3>星图看真数据 <span class="chip next">下一步</span></h3>
+  <p>打开网址看到你的 19 个星座和想法池里所有想法；新想法落进去并长出可能性；能搜、能记新想法、能看时间线。</p>
+  <p class="who">DSH 两轮（各约 1 小时）+ 我用真浏览器验收 · 前置：你说「往下做」</p>
+</div></div>
+
+<div class="phase"><div class="n">3</div><div>
+  <h3>并进首页 + 能连能断 <span class="chip later">之后</span></h3>
+  <p>首页右上角有「星图」入口；连线、拉断、留下、否掉都记得住，两台电脑一样；「这是要做的事」回到待办；「带回对话」一键接着聊。</p>
+  <p class="who">DSH 约 60–90 分钟 · 前置：11/10 首页复盘之后（那之前不改首页）</p>
+</div></div>
+
+<div class="phase"><div class="n">4</div><div>
+  <h3>Hermes 每天分拣 + 提关系 <span class="chip later">之后</span></h3>
+  <p>每天把「只是想法」和「要做的事」分开；给星图提问句式的关系，每天最多 20 条，你点头才成立。</p>
+  <p class="who">只改说明书，约 30 分钟 · 前置：第 3 期</p>
+</div></div>
+
+<p class="note">每一期都是同一个节奏：我写任务书 → DSH 照做 → 我在真浏览器里验收 → 写交接卡 → 停下等你。不会自动跳到下一期。</p>
+
+<h2>三、下一步：第 2 期的具体方案</h2>
+
+<h3>1. 做完后你会看到什么</h3>
+<div class="card">
+  <ul>
+    <li>打开 <code>http://127.0.0.1:8778/star</code>（双击一个 bat 起服务，和原型一样）。</li>
+    <li><b>远看</b>：19 个星座名（在跑 4、探索 7、暂停 2、想法池 4、冻结 2），按领域配色；每个星座围着它「包含」的原始想法（一共 48 条）。</li>
+    <li><b>想法池里的想法</b>（现在 7 条）已经落在相关星座旁边，或者在「新落下」带里。</li>
+    <li><b>近看</b>：点一颗星或放大，句子才展开，其余压暗；远看只有星座名，不挤成一团。</li>
+    <li><b>输入框</b>：打字时最像的 5 条亮起；回车存成新想法，当着你的面落进星空，并长出 3–5 条虚线可能性。点一条 = 留下（会保存），不要的点 ×。</li>
+    <li><b>手机刚发的想法</b>：页面开着时每 30 秒刷新，会落进来（走 Horizon 那条路最多多等 5 分钟）。</li>
+    <li><b>时间视图</b>：所有想法按时间倒序，带来源小字（手机 / 热键 / Claude / 首页）；点小签飞回星空。</li>
+  </ul>
+</div>
+
+<h3>2. 做什么（四个文件，都放在 <code>home/star/</code>）</h3>
+<div class="card">
+  <ol>
+    <li><code>starapi.py</code>：把 <code>content.json</code> 和所有 <code>events-*.jsonl</code> 合成一张图。纯函数，带单元测试。规则：按 id 去重、按时间回放、想法分「在池里 / 只在星图 / 合并了 / 删了」、一对节点只留一条线。</li>
+    <li><code>preview.py</code>：开发用小服务，只在你要看的时候手动起（127.0.0.1:8778）。提供页面、<code>GET /api/star</code>、<code>POST /api/star-event</code>（这一期只收想法）、<code>POST /api/expand</code>（生成可能性，调 DeepSeek；密钥只放本机，不进浏览器）。校验来源，只听本机。</li>
+    <li><code>star.html</code>：用你已经点过头的原型改，<b>手感参数一个不动</b>，只换数据层：读 <code>/api/star</code>，写 <code>/api/star-event</code>。自动布局（固定随机种子，同样的数据永远同样的位置，你才记得「土地租赁在右上角」）；远近分层；落进星空（一次最多动 5 条，整段不超过 2 秒，不挡输入）；输入框兼搜索；时间视图。</li>
+    <li><code>EXPAND_PROMPT.md</code>：生成可能性的提示词（每条不超过 20 个字，宁少勿滥，「连着」只能指向真实存在的节点）。以后 Hermes 也用同一份。</li>
+  </ol>
+</div>
+
+<h3>3. 怎么做（顺序）</h3>
+<div class="card">
+  <ol>
+    <li><b>第一轮（约 1 小时）</b>：<code>starapi.py</code> + 测试 + <code>preview.py</code>。我先用你的真数据跑一遍：19 个星座、48 条包含、想法池里的想法数都对得上，并且和首页服务自己算出来的想法池逐条一致。</li>
+    <li><b>第二轮（约 1 小时）</b>：<code>star.html</code>。我用真浏览器验收，再让 Gemini 看图验收一轮。</li>
+    <li>有问题再让 DSH 修 1–2 轮；我写交接卡，停下等你。</li>
+  </ol>
+  <p class="note">整体耗时：第一版能打开看到真数据，约 2–3 小时（含我验收）；调到顺手可能再多一两轮。你不用盯着。</p>
+</div>
+
+<h3>4. 怎么验收</h3>
+<div class="two">
+  <div class="yes">
+    <h4>我自动查（不用你做）</h4>
+    <ul>
+      <li>单元测试全过；控制台打出 <code>SELFTEST nodes=… links=… overlaps=0</code></li>
+      <li>真数据数量对：19 个星座、48 条包含、想法数一致</li>
+      <li>同样的数据两次打开，位置一样</li>
+      <li>用真实鼠标事件重放关键手势，全程没有 NaN</li>
+      <li>两套窗口（1440×900、1280×800）各 4 张截图：远景、聚焦「个人工作台」、打字亮起、时间视图；字没有叠在一起</li>
+      <li>300 个假节点压测（笔记本是虚拟机，帧率不准，台式机上另看）</li>
+      <li>首页的 <code>server.py</code>、<code>index.html</code>、<code>content.json</code> 哈希不变</li>
+    </ul>
+  </div>
+  <div class="yes">
+    <h4>你看一眼（约 5 分钟）</h4>
+    <ul>
+      <li>打开网址，看远景像不像「你的事」</li>
+      <li>输入一句话回车，看它落进来、长出可能性</li>
+      <li>点一条可能性留下，刷新页面，确认它还在</li>
+      <li>可选：手机发一句想法，几分钟后在页面里看到它落下来</li>
+    </ul>
+  </div>
+</div>
+
+<h3>5. 这一期不做</h3>
+<div class="no">
+  <ul>
+    <li>不改首页：<code>server.py</code>、<code>index.html</code>、<code>content.json</code> 一个字不动（11/10 复盘前也不动）。</li>
+    <li>不保存手动连线、拉断、否掉：手势还能玩手感，但刷新就没了，第 3 期才记住。能保存的只有新想法、「接着想」和留下的可能性。</li>
+    <li>不做 3D、不做手机上看星图、不写 Hermes 的关系提议（第 4 期）。</li>
+  </ul>
+</div>
+
+<details>
+  <summary>6. 风险和对策</summary>
+  <ul>
+    <li><b>DSH 悄悄改坏之前修过的东西</b>（它有前科：改丢过断线条件，写出同名参数键让全图变 NaN）。对策：任务书里列「之前修过的规则」清单，验收逐条对照；用真实指针事件重放手势；每帧 NaN 检查。</li>
+    <li><b>想法太少时画面显得空</b>（现在池里只有 7 条）。这是数据少，不是做错了；星图的价值跟想法数量成正比，攒几周之后「周二那条其实接着周六那条」才会浮出来。</li>
+    <li><b>AI 生成的可能性说空话</b>。对策：每条不超过 20 个字、宁少勿滥、「连着」只能指向真实节点，第一批我抽查质量。</li>
+    <li><b>新想法落不到对的星座</b>。先看每日备料写的归属，再看字面相似度（≥ 0.25），都没有就落进「新落下」带；让 AI 当场判断归属留到第 4 期。</li>
+  </ul>
+</details>
+
+<div class="card decide">
+  <b>要你定的三件小事（不回就按默认）</b>
+  <ol>
+    <li><b>3D 放哪</b>：默认第 2 期只做 2D；3D 融合版先留在单独一页，第 3 期之后再看要不要加「切换 3D」。</li>
+    <li><b>可能性由谁生成</b>：默认只在笔记本上用 DeepSeek（密钥已经在这台）；台式机上要用，需要也放一份密钥。</li>
+    <li><b>手机的两条路要不要统一</b>：默认不动，两条都进想法池，不丢东西（见第五节）。</li>
+  </ol>
+</div>
+
+<h2>四、第 3、4 期大致怎么做</h2>
+<details>
+  <summary>第 3 期：并进首页 + 能连能断（11/10 首页复盘之后）</summary>
+  <ul>
+    <li>首页服务只加三个路由，调用 <code>starapi.py</code>。改之前和改之后各存一份 <code>/api/all</code>、<code>/api/today</code> 的返回，除时间戳外逐字一样；删掉临时的 8778 服务。</li>
+    <li>首页右上角加一个「星图」链接，这是首页唯一的改动。</li>
+    <li>星图开始写事件：点线成立、连到…、拉断、否掉、拖后的位置、改文字、折叠、删除、留在星空 / 这是要做的事、接着想、带回对话。两台电脑各连一条线，同步后两边一样。</li>
+    <li><b>第 3 期前要再给你选的两件事</b>：①「这是要做的事」怎么回到 Horizon 待办——让 Horizon 自己的接口收，还是让 Hermes 代办（桥现在是只读的，不能直接写）；②首页「今天」要不要读 Horizon 的待办（快照 <code>horizon-today.json</code> 已经每 5 分钟更新一次，目前没人读）。</li>
+  </ul>
+</details>
+<details>
+  <summary>第 4 期：Hermes 分拣 + 提关系</summary>
+  <ul>
+    <li>只改 <code>templates/HERMES_DAILY_PREP.md</code>：每天 10:30 先分拣——要做的事照旧写归属和第一步；只是个想法的离开想法池、留在星图；拿不准的当「要做的事」。</li>
+    <li>再给星图提关系：给新想法各找最多 3 个最可能相关的节点，写成不超过 10 个字的问句（例如「是同一件事吗？」），每天最多 20 条；你否掉过的一对永远不再提；只提问，不下结论。</li>
+  </ul>
+</details>
+<details>
+  <summary>先别做的（用顺了再说）</summary>
+  <ul>
+    <li>框选几条「收成一句」；Hermes 在两颗星之间放一个半透明候选；手机上看星图；向量检索。</li>
+  </ul>
+</details>
+
+<h2>五、第 1 期留下的几件小事</h2>
+<div class="card">
+  <ul>
+    <li><b>手机有两条路，都进想法池，不丢</b>：开头是「记个想法」的，走老技能直接写进想法池（1 分钟内能在首页看到）；其他想法走 Horizon 的想法分支，先进 Horizon 收件箱，桥再同步（最多多等 5 分钟）。第二条路还没用真消息测过：先在跟 Hermes 的对话里发一次 <code>/new</code>，再发一句不带「记个想法」的想法就能试。想统一成一条路有两个办法，见设计文档 4.2。</li>
+    <li><b>台式机热键已装好，还没记过事件</b>；笔记本这台还没装（想在这台用，就双击 <code>C:\Agent-Shared\home\capture\install-capture.bat</code>）。选一句话按 Ctrl+Alt+J 试一下。</li>
+    <li><b>Win11 自带记事本里，选中文字抓不到</b>（会弹输入框兜底，想法不丢）。Chrome、普通窗口、终端正常。先放下了。</li>
+    <li>想法池里现在有一条「测试」，在首页点「删掉」就行。</li>
+  </ul>
+</div>
+
+<div class="card warn">
+  <b>顺手提醒（和星图无关，但别拖）</b>
+  <p>Horizon 的 GitHub 公开仓库里有 <code>ops/cal/.caldav_password</code>、你的微信 openid、Tailscale 主机名、<code>ops/p0-reminder/state/</code> 下的消息文件等。如果那个密码是真的，建议先改密码，再把仓库设为私有。需要的话我列出每一处的行号。</p>
+</div>
+
+<footer>
+  完整设计：<code>C:\Agent-Shared\home\star\DESIGN.md</code>（台式机上是 <code>D:\Claude Code 工作区\knowledge\Agent-Shared\home\star\DESIGN.md</code>）<br>
+  原型：<code>C:\Users\User\starmap\proto\star-proto.html</code>（双击同目录 <code>start-star.bat</code> 起服务）<br>
+  交接卡：<code>home\handoff\personal-os.md</code> · 给台式机的说明：<code>incoming\phase1\给台式机.md</code>
+</footer>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>星图 · 3D · 脚本版</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #05060B;
+    color: #DCE3F2;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  }
+  #starmap-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: grab;
+  }
+  #starmap-canvas.dragging-cam {
+    cursor: grabbing;
+  }
+  #starmap-canvas.hovering-node,
+  #starmap-canvas.hovering-link {
+    cursor: pointer;
+  }
+  #top-left-hint {
+    position: fixed;
+    top: 18px;
+    left: 22px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: rgba(214, 224, 245, 0.68);
+    letter-spacing: 0.02em;
+    pointer-events: none;
+    z-index: 20;
+    transition: opacity 1.2s ease;
+    text-shadow: 0 1px 4px rgba(5, 6, 11, 0.95);
+  }
+  #top-left-hint.fade-out {
+    opacity: 0;
+  }
+  #top-right {
+    position: fixed;
+    top: 16px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 30;
+  }
+  .version-tag {
+    font-size: 12px;
+    color: rgba(200, 212, 236, 0.65);
+    background: rgba(13, 17, 30, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 5px 11px;
+    border-radius: 999px;
+    backdrop-filter: blur(8px);
+    letter-spacing: 0.04em;
+    pointer-events: none;
+  }
+  #mute {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(13, 17, 30, 0.72);
+    color: rgba(214, 224, 245, 0.78);
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  #mute:hover {
+    background: rgba(26, 34, 58, 0.85);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.22);
+  }
+  #mute.is-muted {
+    color: rgba(214, 224, 245, 0.35);
+  }
+  #legend {
+    position: fixed;
+    left: 22px;
+    bottom: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    z-index: 20;
+    pointer-events: none;
+  }
+  .legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: rgba(210, 220, 242, 0.72);
+    text-shadow: 0 1px 3px rgba(5, 6, 11, 0.95);
+  }
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .legend-note {
+    font-size: 11px;
+    color: rgba(175, 190, 220, 0.46);
+    text-shadow: 0 1px 3px rgba(5, 6, 11, 0.95);
+  }
+  #idea-box-wrap {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 25;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #idea-input {
+    width: 560px;
+    max-width: calc(100vw - 40px);
+    height: 46px;
+    border-radius: 23px;
+    background: rgba(12, 16, 28, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #EEF2FC;
+    font-size: 14px;
+    padding: 0 22px;
+    outline: none;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    user-select: text;
+    -webkit-user-select: text;
+  }
+  #idea-input::placeholder {
+    color: rgba(186, 198, 226, 0.45);
+  }
+  #idea-input:focus {
+    border-color: rgba(145, 175, 255, 0.38);
+    background: rgba(15, 20, 35, 0.9);
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.58), 0 0 0 3px rgba(120, 155, 255, 0.1);
+  }
+</style>
+</head>
+<body>
+  <canvas id="starmap-canvas"></canvas>
+
+  <div id="top-left-hint">拖动空白转镜头 · 滚轮推拉 · 拖球固定 · 拉线弹火花 · 快划切线（Ctrl+Z 撤回） · 单击球聚焦</div>
+
+  <div id="top-right">
+    <span class="version-tag">3D · 脚本版</span>
+    <button id="mute" type="button" title="静音切换" aria-label="静音切换">♪</button>
+  </div>
+
+  <div id="legend">
+    <div class="legend-items" id="legend-items"></div>
+    <div class="legend-note" id="legend-note"></div>
+  </div>
+
+  <div id="idea-box-wrap">
+    <input id="idea-input" type="text" autocomplete="off" spellcheck="false" placeholder="想到什么，直接打，回车记下">
+  </div>
+
+<script>

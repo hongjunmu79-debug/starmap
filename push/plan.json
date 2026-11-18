@@ -1,0 +1,95 @@
+{
+ "version": 1,
+ "window": [
+  "2026-11-10",
+  "2026-11-24"
+ ],
+ "per_day": 3,
+ "assignment_sha256": "4adcd7f8aee5864f5b42218d7ce920f51ce5932c88dc7c72fb1ae2345494284f",
+ "units": [
+  {
+   "unit": "home:harmonyos:0",
+   "kind": "home",
+   "item": "harmonyos",
+   "step_index": 0,
+   "title": "鸿蒙上跑大模型",
+   "step": "如果现在在电脑前，就打开华为开发者文档搜「端侧大模型」（约10分钟）"
+  },
+  {
+   "unit": "home:harness:0",
+   "kind": "home",
+   "item": "harness",
+   "step_index": 0,
+   "title": "我的 Harness：提示词、Skill、专家团怎么配",
+   "step": "如果现在在电脑前，就打开笔记写下三层标题：系统提示词/用户消息/追加（约5分钟）"
+  },
+  {
+   "unit": "home:land-lease:0",
+   "kind": "home",
+   "item": "land-lease",
+   "step_index": 0,
+   "title": "土地租赁合同重做（顺带沉淀方法论）",
+   "step": "如果坐到台式机前，就打开终端把 land-lease 仓库 git clone 到本地（约10分钟）"
+  },
+  {
+   "unit": "home:lyrics:0",
+   "kind": "home",
+   "item": "lyrics",
+   "step_index": 0,
+   "title": "演唱会歌词同步器",
+   "step": "如果坐到台式机前，就打开演唱会歌词同步器会话并粘贴启动提示词（约5分钟）"
+  },
+  {
+   "unit": "home:math-fun:0",
+   "kind": "home",
+   "item": "math-fun",
+   "step_index": 0,
+   "title": "数学里有趣的点",
+   "step": "如果现在在电脑前，就打开B站搜3Blue1Brown线性代数第1集（约3分钟）"
+  },
+  {
+   "unit": "home:transformer:0",
+   "kind": "home",
+   "item": "transformer",
+   "step_index": 0,
+   "title": "搞懂 Transformer：读论文、手搓一个、和人脑对照",
+   "step": "如果现在在电脑前，就打开《The Illustrated Transformer》只看图（约10分钟）"
+  },
+  {
+   "unit": "hz:19993e47aab4",
+   "kind": "horizon",
+   "title": "弹队长的歌《碎碎念》＋看看其他歌能不能弹",
+   "step": "如果现在在手机旁，就打开音乐App搜队长《碎碎念》加入歌单（约5分钟）"
+  },
+  {
+   "unit": "hz:34b4c453c675",
+   "kind": "horizon",
+   "title": "准备 Q4 复盘会",
+   "step": "如果现在在电脑前，就新建文档写下Q4复盘会六个子任务清单（约10分钟）"
+  },
+  {
+   "unit": "hz:42b3b521bfc5",
+   "kind": "horizon",
+   "title": "调研 Comma（AFK-surf 开源个人 Agent）能否直接用",
+   "step": "如果现在在电脑前，就打开Comma的GitHub仓库README页（约5分钟）"
+  },
+  {
+   "unit": "hz:a095084023bb",
+   "kind": "horizon",
+   "title": "看 Agent 2L 的原理（名称待确认）",
+   "step": "如果现在在手机旁，就搜索 Agent RL 的原理确认正确写法（约3分钟）"
+  },
+  {
+   "unit": "hz:a6d9c85aedcc",
+   "kind": "horizon",
+   "title": "研究阿里×浙大 Astar 工业级 AI 自进化模型，并理清它与 Agent RL 的关系",
+   "step": "如果现在在电脑前，就打开arXiv搜2608.27287并收藏（约5分钟）"
+  },
+  {
+   "unit": "hz:b3e599fe96be",
+   "kind": "horizon",
+   "title": "问一下崔哥的事",
+   "step": "如果现在在手机旁，就给某哥发消息问「那件事进展如何」（约3分钟）"
+  }
+ ]
+}

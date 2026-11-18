@@ -1,0 +1,116 @@
+{
+ "qualified": [
+  "deepseek",
+  "gemini",
+  "claude"
+ ],
+ "items": [
+  {
+   "rid": "r09",
+   "sid": "s01",
+   "step": "如果现在在电脑前，就打开Comma的GitHub仓库README页（约5分钟）",
+   "pass_votes": 3,
+   "keep": true,
+   "fails": {}
+  },
+  {
+   "rid": "r07",
+   "sid": "s07",
+   "step": "如果现在在手机旁，就打开音乐App搜队长《碎碎念》加入歌单（约5分钟）",
+   "pass_votes": 3,
+   "keep": true,
+   "fails": {}
+  },
+  {
+   "rid": "r11",
+   "sid": "s09",
+   "step": "如果现在在电脑前，就打开arXiv搜2608.27287并收藏（约5分钟）",
+   "pass_votes": 3,
+   "keep": true,
+   "fails": {}
+  },
+  {
+   "rid": "r04",
+   "sid": "s11",
+   "step": "如果现在在台式机前，就打开该项目会话并粘贴启动提示词（约5分钟）",
+   "pass_votes": 3,
+   "keep": true,
+   "fails": {}
+  },
+  {
+   "rid": "r08",
+   "sid": "s13",
+   "step": "如果现在在电脑前，就新建文档写下Q4复盘会六个子任务清单（约10分钟）",
+   "pass_votes": 3,
+   "keep": true,
+   "fails": {}
+  },
+  {
+   "rid": "r01",
+   "sid": "s14",
+   "step": "如果现在在电脑前，就打开华为开发者文档搜「端侧大模型」（约10分钟）",
+   "pass_votes": 3,
+   "keep": true,
+   "fails": {}
+  },
+  {
+   "rid": "r03",
+   "sid": "s15",
+   "step": "如果现在在台式机前，就打开终端 git clone 该仓库到本地（约10分钟）",
+   "pass_votes": 1,
+   "keep": false,
+   "fails": {
+    "gemini": [
+     "F"
+    ],
+    "claude": [
+     "B"
+    ]
+   }
+  },
+  {
+   "rid": "r12",
+   "sid": "s16",
+   "step": "如果现在在手机旁，就给某哥发消息问「那件事进展如何」（约3分钟）",
+   "pass_votes": 3,
+   "keep": true,
+   "fails": {}
+  },
+  {
+   "rid": "r05",
+   "sid": "s18",
+   "step": "如果现在在电脑前，就打开B站搜3Blue1Brown线性代数第1集（约3分钟）",
+   "pass_votes": 3,
+   "keep": true,
+   "fails": {}
+  },
+  {
+   "rid": "r10",
+   "sid": "s19",
+   "step": "如果现在在手机旁，就给用户发消息确认「Agent 2L」具体名称（约3分钟）",
+   "pass_votes": 2,
+   "keep": true,
+   "fails": {
+    "claude": [
+     "B"
+    ]
+   }
+  },
+  {
+   "rid": "r02",
+   "sid": "s21",
+   "step": "如果现在在电脑前，就打开笔记写下三层标题：系统提示词/用户消息/追加（约5分钟）",
+   "pass_votes": 3,
+   "keep": true,
+   "fails": {}
+  },
+  {
+   "rid": "r06",
+   "sid": "s22",
+   "step": "如果现在在电脑前，就打开《The Illustrated Transformer》只看图（约10分钟）",
+   "pass_votes": 3,
+   "keep": true,
+   "fails": {}
+  }
+ ]
+}

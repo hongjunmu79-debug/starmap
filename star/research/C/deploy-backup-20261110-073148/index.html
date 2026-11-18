@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>开机首页</title>
+<style>
+:root{
+  --bg:#070b16; --ink:#e8edf8; --muted:#9aa4bd; --faint:#66708c;
+  --card:rgba(255,255,255,.045); --card-hi:rgba(255,255,255,.08); --line:rgba(255,255,255,.09); --line-hi:rgba(255,255,255,.18);
+  --accent:#8fb8ff; --accent-ink:#0b1430; --violet:#b9a2ff; --ok:#7fe0b5; --warn:#ffcf7a; --bad:#ff9b9b;
+  font-family:"Microsoft YaHei UI","PingFang SC","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{min-height:100vh;line-height:1.6;font-size:15px}
+#sky{position:fixed;inset:0;z-index:0;pointer-events:none}
+.wrap{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:36px 24px 80px}
+header{display:flex;gap:24px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin-bottom:26px}
+h1{font-size:28px;font-weight:600;margin:0;letter-spacing:.5px}
+.sub{color:var(--muted);font-size:13px;margin-top:6px}
+#ideaForm{display:flex;gap:8px;flex:1;min-width:280px;max-width:480px;position:relative}
+#ideaInput{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--ink);padding:11px 14px;font:inherit;outline:none;transition:border-color .2s,background .2s}
+#ideaInput:focus{border-color:var(--accent);background:var(--card-hi)}
+#ideaInput::placeholder{color:var(--faint)}
+button{font:inherit;font-size:14px;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 13px;transition:background .2s,border-color .2s,transform .1s}
+button:hover{background:var(--card-hi);border-color:var(--line-hi)}
+button:active{transform:scale(.97)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
+button.primary:hover{background:#a9c8ff}
+button.ghost{background:transparent}
+.banner{border:1px solid rgba(255,207,122,.35);background:rgba(255,207,122,.08);color:var(--warn);padding:10px 14px;border-radius:12px;margin-bottom:8px}
+h2.sec{font-size:14px;font-weight:600;color:var(--muted);letter-spacing:2px;margin:38px 0 12px}
+.gdesc{color:var(--faint);font-size:12.5px;margin:-6px 0 12px}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:920px){.cards{grid-template-columns:1fr}}
+.card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 18px 16px;display:flex;flex-direction:column;gap:8px;backdrop-filter:blur(6px);transition:transform .32s ease,opacity .32s ease,border-color .3s}
+.card:hover{border-color:var(--line-hi)}
+.card .kind{font-size:12px;letter-spacing:1px;color:var(--faint)}
+.card.k-running .kind{color:var(--accent)}
+.card.k-explore .kind{color:var(--violet)}
+.card.k-light .kind{color:var(--ok)}
+.card h3{margin:0;font-size:13px;font-weight:500;color:var(--muted)}
+.card .step{font-size:18px;font-weight:600;line-height:1.45}
+.card .detail{color:var(--muted);font-size:13.5px;margin:0}
+.meta{font-size:12px;color:var(--faint)}
+.links a{color:var(--accent);font-size:13px;margin-right:12px;text-decoration:none}
+.links a:hover{text-decoration:underline}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:8px}
+.leaving{opacity:0;transform:translateY(-10px) scale(.98)}
+.entering{animation:enter .45s ease both}
+@keyframes enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.burst{position:absolute;right:16px;top:12px;color:var(--ok);font-size:22px;font-weight:700;animation:burst 1s ease forwards;pointer-events:none}
+@keyframes burst{0%{opacity:0;transform:scale(.4)}30%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:translateY(-16px)}}
+.spark{position:fixed;width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 12px 4px rgba(185,162,255,.8);z-index:30;pointer-events:none;animation:spark 1.1s ease-out forwards}
+@keyframes spark{to{transform:translate(var(--dx),var(--dy)) scale(.3);opacity:0}}
+.list{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:16px;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;transition:background .2s,border-color .2s}
+.row:hover{background:var(--card-hi);border-color:var(--line-hi)}
+.row.dim{opacity:.6}
+.row-main{min-width:0}
+.row-title{font-weight:600}
+.row-next{color:var(--muted);font-size:13px;margin-top:2px}
+.row-inc{color:var(--faint);font-size:12px;margin-top:2px}
+.row-side{display:flex;align-items:center;gap:10px;color:var(--faint);font-size:12px;white-space:nowrap}
+.bar{width:90px;height:4px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--violet));border-radius:4px;transition:width .5s ease}
+.chip{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-left:8px;font-weight:500;vertical-align:1px}
+.chip.wait{color:var(--warn);border-color:rgba(255,207,122,.45)}
+.chip.run{color:var(--accent);border-color:rgba(143,184,255,.45)}
+.chip.stuck{color:var(--bad);border-color:rgba(255,155,155,.45)}
+.chip.new{color:var(--ok);border-color:rgba(127,224,181,.45)}
+.idea{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 14px;border:1px dashed var(--line-hi);border-radius:12px;margin-bottom:8px}
+.idea small{color:var(--faint);margin-left:8px}
+details>summary{cursor:pointer;color:var(--muted);margin:38px 0 12px;letter-spacing:2px;font-weight:600;font-size:14px;list-style:none}
+details>summary::-webkit-details-marker{display:none}
+footer{margin-top:48px;color:var(--faint);font-size:12.5px;border-top:1px solid var(--line);padding-top:18px}
+footer ul{margin:6px 0 10px;padding-left:18px}
+#veil{position:fixed;inset:0;background:rgba(3,6,14,.55);z-index:10;opacity:0;pointer-events:none;transition:opacity .25s}
+#veil.on{opacity:1;pointer-events:auto}
+#drawer{position:fixed;top:0;right:0;height:100vh;width:min(580px,100vw);background:#0c1224;border-left:1px solid var(--line);z-index:11;transform:translateX(102%);transition:transform .32s cubic-bezier(.2,.8,.2,1);overflow-y:auto;padding:24px 26px 60px}
+#drawer.on{transform:none}
+#drawer h2{margin:4px 0 8px;font-size:21px;line-height:1.4}
+.dtop{display:flex;justify-content:space-between;align-items:center;color:var(--faint);font-size:12px;letter-spacing:1px}
+.inc{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
+.inc span{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 9px}
+.kv{margin:14px 0;font-size:14px}
+.kv b{display:block;color:var(--faint);font-weight:500;font-size:12px;letter-spacing:1px;margin-bottom:2px}
+.steps{list-style:none;padding:0;margin:8px 0}
+.steps li{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px;background:var(--card);transition:opacity .3s}
+.steps li.done{opacity:.55}
+.steps label{display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-weight:600}
+.steps input{margin-top:5px;accent-color:var(--accent);width:16px;height:16px;flex:none}
+.steps .d{color:var(--muted);font-size:13px;margin:6px 0 0 26px;font-weight:400}
+.steps .x{margin:8px 0 0 26px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--faint)}
+.steps .x a{color:var(--accent);text-decoration:none}
+.handoff{border:1px solid rgba(143,184,255,.3);background:rgba(143,184,255,.06);border-radius:12px;padding:12px 14px;font-size:13.5px;margin:12px 0}
+.handoff div{margin:2px 0}
+.dact{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+#toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);background:#1b2440;border:1px solid var(--line-hi);padding:10px 16px;border-radius:12px;opacity:0;transition:all .3s;z-index:40;pointer-events:none}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+.err{color:var(--bad)}
+.btn{display:inline-block;font-size:14px;border-radius:10px;border:1px solid rgba(127,224,181,.45);color:var(--ok);padding:7px 13px;text-decoration:none;background:rgba(127,224,181,.08)}
+.btn:hover{background:rgba(127,224,181,.16)}
+.ready{color:var(--ok)!important;text-decoration:none}
+.brief{border:1px solid rgba(127,224,181,.3);background:rgba(127,224,181,.06);padding:10px 14px;border-radius:12px;margin-bottom:8px;font-size:13.5px}
+.brief b{color:var(--ok);font-weight:600}
+.note{color:var(--muted);font-size:12.5px;margin-top:4px}
+.push-card h3{font-size:16px;color:var(--ink);font-weight:600}
+.push-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.push-row{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;border-top:1px solid var(--line);padding-top:12px;margin-top:4px;min-width:0}
+.push-row:first-of-type{border-top:0;padding-top:2px;margin-top:0}
+.push-main{min-width:0;flex:1}
+.push-step{font-weight:600;line-height:1.5;overflow-wrap:anywhere}
+.push-title{color:var(--muted);font-size:13px;margin-top:3px;overflow-wrap:anywhere}
+.push-side{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:6px;max-width:42%}
+.push-side .meta{text-align:right;overflow-wrap:anywhere}
+.sugg-row{display:flex;gap:12px;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding:9px 0;min-width:0}
+.sugg-row:first-of-type{border-top:0;padding-top:2px}
+.sugg-text{min-width:0;flex:1;overflow-wrap:anywhere}
+.sugg-row .actions{margin:0;padding:0;flex:none}
+@media (max-width:560px){
+  .push-row,.sugg-row{flex-direction:column;align-items:stretch;gap:8px}
+  .push-side{align-items:flex-start;max-width:100%}
+  .push-side .meta{text-align:left}
+  .sugg-row .actions{padding-top:0}
+}
+.idea{align-items:flex-start}
+.idea-acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;flex:none}
+.noteform{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.noteform select,.noteform input{background:var(--card);border:1px solid var(--line);border-radius:10px;color:var(--ink);padding:7px 10px;font:inherit;font-size:13.5px}
+.noteform select{max-width:260px}
+.noteform input{flex:1;min-width:220px}
+.noteform .f-text{flex-basis:100%;font-size:15px}
+.noteform option{background:#0c1224}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+<div class="wrap">
+  <header>
+    <div>
+      <h1 id="hello">欢迎回来</h1>
+      <div class="sub" id="sub">正在读取……</div>
+      <div class="sub"><a class="ready" href="/docs/readme" target="_blank" rel="noopener">怎么用这个首页</a> · <a class="ready" href="#foot">全部文档</a> · <a class="ready" href="/star">星图</a></div>
+    </div>
+    <form id="ideaForm" autocomplete="off">
+      <input id="ideaInput" maxlength="2000" placeholder="记一笔：突然冒出来的想法，回车保存（按 / 聚焦）" aria-label="记一笔">
+      <button type="submit">记下</button>
+    </form>
+  </header>
+  <div id="banner"></div>
+  <div id="brief"></div>
+  <div id="push"></div><div id="suggest"></div>
+
+  <h2 class="sec">今天</h2>
+  <div class="cards" id="cards"></div>
+
+  <h2 class="sec" id="runHead">在跑</h2>
+  <div class="list" id="runList"></div>
+
+  <div id="groups"></div>
+
+  <h2 class="sec">想法池</h2>
+  <div class="gdesc" id="poolHint"></div>
+  <div id="myIdeas"></div>
+  <div class="list" id="poolList"></div>
+
+  <details id="frozen"><summary>冻结 / 待你定 ▾</summary><div class="list" id="frozenList"></div></details>
+
+  <footer id="foot"></footer>
+</div>
+<div id="veil"></div>
+<aside id="drawer" role="dialog" aria-modal="true" aria-label="详情"></aside>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+// Opened by double-clicking index.html: the page can't reach its data from a file, so go to the server.
+if (location.protocol === 'file:') location.replace('http://127.0.0.1:8777/');
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const KIND = {running: '在跑', explore: '探索', light: '轻松一下'};
+const STATUS_NAME = {running: '在跑', explore: '探索中', paused: '暂停', pool: '想法池', frozen: '冻结'};
+const DESK_HOME = 'D:\\Claude Code 工作区\\knowledge\\Agent-Shared\\home';
+let SNAP = null, ITEMS = {}, GROUPS = {}, openId = null, noteOpen = null;
+
+function localDate() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+function getShifts() { try { return JSON.parse(localStorage.getItem('agenthome.shift.' + localDate())) || {}; } catch (e) { return {}; } }
+function setShifts(s) { try { localStorage.setItem('agenthome.shift.' + localDate(), JSON.stringify(s)); } catch (e) {} }
+function query() { const s = getShifts(); return '?shift_running=' + (s.running || 0) + '&shift_explore=' + (s.explore || 0) + '&shift_light=' + (s.light || 0); }
+
+async function load() {
+  try {
+    const r = await fetch('/api/all' + query(), {cache: 'no-store'});
+    if (!r.ok) throw new Error(r.status);
+    SNAP = await r.json();
+    render();
+  } catch (e) {
+    $('#sub').textContent = '连不上首页服务';
+    $('#cards').innerHTML = '<div class="card"><div class="err">连不上首页服务（' + esc(e.message || e) + '）</div>' +
+      '<p class="detail">首页要从 http://127.0.0.1:8777 打开，桌面上有「开机首页」快捷方式。还是不行的话，双击 Agent-Shared\\home\\install.bat，它会把服务重启一遍；不要直接运行 server.py。</p>' +
+      '<div class="actions"><button data-act="retry">重试</button></div></div>';
+  }
+}
+
+async function post(ev) {
+  const r = await fetch('/api/event' + query(), {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(ev)});
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || r.status);
+  SNAP = j.snapshot;
+  return j;
+}
+
+function status(it) { return SNAP.state.status[it.id] || it.status; }
+function doneSet(it) { return new Set(SNAP.state.done[it.id] || []); }
+function progress(it) { const d = doneSet(it); return [it.steps.filter((_, i) => d.has(i)).length, it.steps.length]; }
+function nextIdx(it) { const d = doneSet(it); for (let i = 0; i < it.steps.length; i++) if (!d.has(i)) return i; return null; }
+function handoff(it) { return SNAP.handoff[it.handoff || it.id] || null; }
+function readyFile(it, i) { return (SNAP.prepared[it.id] || {})[String(i)] || null; }
+function readyLink(file, label) { return '<a class="ready" href="/prepared/' + encodeURIComponent(file) + '" target="_blank" rel="noopener">' + label + '</a>'; }
+function filled(v) { return !!v && !['', '无', '没有', '暂无', 'none', '-'].includes(String(v).trim().replace(/[。.]$/, '').toLowerCase()); }
+function fmt(iso) { if (!iso) return ''; const d = new Date(iso); return isNaN(d) ? String(iso).replace('T', ' ') : d.toLocaleString('zh-CN', {month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'}); }
+
+function chip(it) {
+  const h = handoff(it);
+  if (!h) return '<span class="chip new">未开工</span>';
+  const st = h.status || '';
+  if (st.includes('卡住')) return '<span class="chip stuck">卡住</span>';
+  if (h.waiting) return '<span class="chip wait">等你验收</span>';
+  return '<span class="chip run">' + esc(st || 'Agent 在跑') + '</span>';
+}
+
+function continuePrompt(it) {
+  return '接着做「' + it.title + '」：先读 ' + DESK_HOME + '\\handoff\\' + (it.handoff || it.id) + '.md，从「下一步」继续；做完按交接规则更新它，然后停下来等我。';
+}
+
+function nextText(it) {
+  const h = status(it) === 'running' ? handoff(it) : null;
+  if (h && filled(h.next)) return h.next;
+  const i = nextIdx(it);
+  return i == null ? '全部做完了' : it.steps[i].t;
+}
+
+function pushHtml(p) {
+  const rows = p.items.map(it => {
+    const home = it.kind === 'home';
+    const source = home ? '首页' : 'Horizon';
+    const side = home
+      ? '<button class="ghost" data-open="' + esc(it.item) + '">打开这件事</button>'
+      : '<span class="meta">做完在 Horizon 里勾掉</span>';
+    return '<div class="push-row"><div class="push-main"><div class="push-step">' + esc(it.step) + '</div>' +
+      '<div class="push-title">' + esc(it.title) + '<span class="chip">' + source + '</span></div></div>' +
+      '<div class="push-side">' + side + '</div></div>';
+  }).join('');
+  return '<article class="card push-card"><div class="push-head"><h3>今天先做这一步</h3>' +
+    '<span class="meta">还剩 ' + esc(p.left) + ' 件</span></div>' + rows + '</article>';
+}
+
+function suggestHtml(items) {
+  return '<article class="card"><div class="push-head"><h3>建议</h3></div>' + items.map(item =>
+    '<div class="sugg-row"><div class="sugg-text">' + esc(item.text) + '</div>' +
+    '<div class="actions"><button class="primary" data-act="sugg-ok" data-id="' + esc(item.id) + '">同意</button>' +
+    '<button class="ghost" data-act="sugg-no" data-id="' + esc(item.id) + '">不要</button></div></div>').join('') +
+    '</article>';
+}
+
+function render() {
+  ITEMS = {}; GROUPS = {};
+  SNAP.content.items.forEach(it => ITEMS[it.id] = it);
+  SNAP.content.groups.forEach(g => GROUPS[g.id] = g);
+  const items = SNAP.content.items.slice().sort((a, b) => (a.order || 99) - (b.order || 99));
+  const running = items.filter(it => status(it) === 'running');
+  const d = new Date();
+  const weekday = '日一二三四五六'[d.getDay()];
+  $('#sub').textContent = (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日 周' + weekday + ' · 你交给我的 39 件事，合并后是 ' + items.length + ' 件 · ' + running.length + ' 件在跑';
+
+  const waiting = SNAP.waiting.length;
+  $('#banner').innerHTML = waiting >= 2 ? '<div class="banner">有 ' + waiting + ' 件在等你验收：先验收，再派新活。</div>' : '';
+  const br = SNAP.brief;
+  $('#brief').innerHTML = br ? '<div class="brief"><b>今天替你备好了</b>（' + esc(fmt(br.mtime)) + '）' + br.lines.map(l => '<div>' + esc(l) + '</div>').join('') + '</div>' : '';
+
+  const push = SNAP.push;
+  $('#push').innerHTML = push && push.active && push.items.length ? pushHtml(push) : '';
+  $('#suggest').innerHTML = (SNAP.suggestions || []).length ? suggestHtml(SNAP.suggestions) : '';
+
+  $('#cards').innerHTML = SNAP.today.cards.map(cardHtml).join('') || '<div class="card"><p class="detail">今天没有要做的了，去想法池里挑一个玩玩。</p></div>';
+
+  $('#runHead').innerHTML = '在跑 <span class="chip">' + running.length + '</span>';
+  $('#runList').innerHTML = running.map(it => {
+    const h = handoff(it);
+    const side = h ? (h.stale ? '<span class="chip wait">超过 2 天没更新</span> ' : '') + '更新于 ' + esc(fmt(h.updated || h.mtime)) : '还没写交接卡';
+    return '<div class="row" data-open="' + esc(it.id) + '"><div class="row-main"><div class="row-title">' + esc(it.title) + chip(it) + '</div>' +
+      '<div class="row-next">下一步：' + esc(nextText(it)) + '</div></div><div class="row-side">' + side + '</div></div>';
+  }).join('');
+
+  const shown = new Set(['running', 'pool', 'frozen']);
+  let groupsHtml = '';
+  SNAP.content.groups.forEach(g => {
+    if (shown.has(g.id)) return;
+    const members = items.filter(it => it.group === g.id && !shown.has(status(it)));
+    if (!members.length) return;
+    groupsHtml += '<h2 class="sec">' + esc(g.name) + '</h2>' + (g.desc ? '<div class="gdesc">' + esc(g.desc) + '</div>' : '') +
+      '<div class="list">' + members.map(rowHtml).join('') + '</div>';
+  });
+  const strays = items.filter(it => GROUPS[it.group] && shown.has(it.group) && !shown.has(status(it)));
+  if (strays.length) groupsHtml += '<h2 class="sec">其他</h2><div class="list">' + strays.map(rowHtml).join('') + '</div>';
+  $('#groups').innerHTML = groupsHtml;
+
+  $('#poolHint').innerHTML = '想法可以随时点「编辑」改内容、选归属、写第一步，也可以复制给 Agent 补；攒几条之后，' +
+    '<button class="ghost" data-act="copy" data-prompt="' + esc(tidyPrompt()) + '">复制「整理想法池」</button> 交给 Claude，并进清单。';
+  $('#myIdeas').innerHTML = SNAP.state.ideas.map(ideaHtml).join('');
+  $('#poolList').innerHTML = items.filter(it => status(it) === 'pool').map(rowHtml).join('');
+  $('#frozenList').innerHTML = items.filter(it => status(it) === 'frozen').map(rowHtml).join('');
+
+  const rules = (SNAP.content.rules || []).map(r => '<li>' + esc(r) + '</li>').join('');
+  $('#foot').innerHTML = '<div>三条默认做法</div><ul>' + rules + '</ul><div>' + esc(SNAP.content.note || '') + '</div>' +
+    '<div style="margin-top:10px">文档：' + (SNAP.docs || []).map(d => '<a class="ready" href="/docs/' + esc(d.key) + '" target="_blank" rel="noopener" title="' + esc(d.path) + '">' + esc(d.name) + '</a>').join(' · ') + '</div>' +
+    '<div style="margin-top:4px">文件位置：' + (SNAP.docs || []).map(d => esc(d.name) + ' ' + esc(d.path)).join('；') + '</div>' +
+    '<div style="margin-top:10px">数据在 ' + esc(SNAP.home) + ' · 这台电脑：' + esc(SNAP.host) + ' · 两台电脑的进度靠 Syncthing 同步</div>';
+
+  if (openId) renderDrawer(openId);
+}
+
+function vaultDir() { return SNAP.home.replace(/[\\/]home$/, ''); }
+
+function ideaPrompt(idea) {
+  return '首页想法池里有一条新想法：「' + idea.text + '」（idea_id：' + idea.id + '）。先判断它属于 ' + SNAP.home + '\\content.json 里的哪一件（对照每件的 title 和 includes），都不沾边就算「新的一件」；再写一个 30 分钟内能做完的第一步。然后按 ' +
+    vaultDir() + '\\templates\\HERMES_DAILY_PREP.md 第 1 件事里的格式，往 ' + SNAP.home + '\\events-hermes.jsonl 追加一行 idea_note。不要改 content.json。';
+}
+
+function tidyPrompt() {
+  return '把首页的想法池整理进清单：读 ' + SNAP.home + '\\全部清单.md 末尾「你记下的新想法」，按 ' + SNAP.home + '\\README.md 里「整理想法池」的规则，把每条并进 content.json 里对应的那一件，或者新增一件；处理完的发 idea_drop。';
+}
+
+function ideaHtml(idea) {
+  const n = idea.note, editing = noteOpen === idea.id;
+  const belongs = n ? (ITEMS[n.belongs] ? ITEMS[n.belongs].title : n.belongs) : '';
+  const hasStep = !!(n && n.first_step);
+  let html = '<div class="idea" data-idea="' + esc(idea.id) + '"><div style="flex:1;min-width:0">' + esc(idea.text) +
+    '<small>' + esc(fmt(idea.ts)) + (hasStep ? '' : ' · 待补第一步') + '</small>' +
+    (n ? '<div class="note">属于「' + esc(belongs || '新的一件') + '」' + (hasStep ? ' · 第一步：' + esc(n.first_step) : '') + '</div>' : '');
+  if (editing) {
+    const opts = '<option value="新的一件">新的一件</option>' + SNAP.content.items.map(it =>
+      '<option value="' + esc(it.id) + '"' + (n && n.belongs === it.id ? ' selected' : '') + '>' + esc(it.title) + '</option>').join('');
+    html += '<div class="noteform"><input class="f-text" maxlength="2000" aria-label="想法内容" value="' + esc(idea.text) + '">' +
+      '<select aria-label="属于哪一件">' + opts + '</select>' +
+      '<input class="f-step" maxlength="500" aria-label="第一步" placeholder="第一步：30 分钟内能做完的一件具体的事（可以先空着）" value="' + esc(n ? n.first_step : '') + '">' +
+      '<button class="primary" data-act="note-save">保存</button><button class="ghost" data-act="note-cancel">取消</button>' +
+      '<div class="err" hidden>想法内容不能是空的</div></div>';
+  }
+  return html + '</div><div class="idea-acts">' +
+    (editing ? '' : '<button data-act="note">' + (hasStep ? '编辑' : '编辑 / 补第一步') + '</button>') +
+    '<button class="ghost" data-act="copy" data-prompt="' + esc(ideaPrompt(idea)) + '">复制给 Agent</button>' +
+    '<button class="ghost" data-act="drop" data-idea="' + esc(idea.id) + '">删掉</button></div></div>';
+}
+
+function rowHtml(it) {
+  const [done, total] = progress(it);
+  const pct = total ? Math.round(done * 100 / total) : 0;
+  const inc = (it.includes || []).length > 1 ? '<div class="row-inc">包含：' + esc(it.includes.join('、')) + '</div>' : '';
+  const d = doneSet(it);
+  const wait = (it.wait ? '<span class="chip">' + esc(it.wait) + '</span>' : '') +
+    (Object.keys(SNAP.prepared[it.id] || {}).some(k => !d.has(Number(k))) ? '<span class="chip new">已备好</span>' : '');
+  return '<div class="row' + (it.wait ? ' dim' : '') + '" data-open="' + esc(it.id) + '"><div class="row-main"><div class="row-title">' + esc(it.title) + wait + '</div>' +
+    '<div class="row-next">下一步：' + esc(nextText(it)) + '</div>' + inc + '</div>' +
+    '<div class="row-side"><div class="bar"><i style="width:' + pct + '%"></i></div>' + done + '/' + total + '</div></div>';
+}
+
+function cardHtml(c) {
+  const it = ITEMS[c.item], s = c.step;
+  let kind = KIND[c.kind];
+  if (c.kind === 'running') kind += c.handoff ? ' · ' + (c.handoff.waiting ? '等你' : (c.handoff.status || 'Agent 在跑')) : ' · 还没开工';
+  const where = c.source === 'handoff' ? '来自交接卡' : (c.step_index != null ? '第 ' + (c.step_index + 1) + '/' + c.progress[1] + ' 步' : '');
+  const mins = s && s.min ? '约 ' + s.min + ' 分钟' : '';
+  const links = (s && s.links || []).map(l => '<a href="' + esc(l.u) + '" target="_blank" rel="noopener">' + esc(l.t) + '</a>').join('');
+  const prompt = c.source === 'handoff' ? continuePrompt(it) : (s && s.prompt) || '';
+  return '<article class="card k-' + c.kind + '" data-kind="' + c.kind + '" data-item="' + esc(c.item) + '" data-step="' + (c.step_index == null ? '' : c.step_index) + '">' +
+    '<div class="kind">' + esc(kind) + '</div><h3>' + esc(it.title) + '</h3>' +
+    '<div class="step">' + esc(s ? s.t : '等 Agent 写交接卡') + '</div>' +
+    (s && s.d ? '<p class="detail">' + esc(s.d) + '</p>' : '') +
+    '<div class="meta">' + [mins, where, c.ready ? '<span class="ready">已备好，看一眼就行</span>' : (s && s.delegate ? 'Hermes 会替你备好' : '')].filter(Boolean).join(' · ') + '</div>' +
+    (links ? '<div class="links">' + links + '</div>' : '') +
+    '<div class="actions">' +
+    (c.ready ? '<a class="btn" href="/prepared/' + encodeURIComponent(c.ready) + '" target="_blank" rel="noopener">看我备好的</a>' : '') +
+    (c.source === 'steps' && c.step_index != null ? '<button class="primary" data-act="done">做完了</button>' : '') +
+    (prompt ? '<button data-act="copy" data-prompt="' + esc(prompt) + '">复制提示词</button>' : '') +
+    '<button class="ghost" data-act="shift">换一个</button><button class="ghost" data-act="open">看全部</button></div></article>';
+}
+
+function renderDrawer(id) {
+  const it = ITEMS[id];
+  if (!it) return closeDrawer();
+  const st = status(it), g = GROUPS[it.group], d = doneSet(it), h = st === 'running' ? handoff(it) : null;
+  const kv = (label, v) => v ? '<div class="kv"><b>' + label + '</b>' + esc(v) + '</div>' : '';
+  let html = '<div class="dtop"><span>' + esc(g ? g.name : '') + ' · ' + esc(STATUS_NAME[st] || st) + '</span><button class="ghost" data-act="close">关闭</button></div>' +
+    '<h2>' + esc(it.title) + '</h2>';
+  if ((it.includes || []).length) html += '<div class="inc">' + it.includes.map(x => '<span>' + esc(x) + '</span>').join('') + '</div>';
+  if (st === 'running') {
+    html += h ? '<div class="handoff"><div><b>交接卡</b>（' + esc(fmt(h.updated || h.mtime)) + '）</div><div>状态：' + esc(h.status || '') + '</div><div>下一步：' + esc(h.next || '') + '</div>' +
+      (filled(h.blocker) ? '<div>卡点：' + esc(h.blocker) + '</div>' : '') + (filled(h.needs_you) ? '<div>需要你：' + esc(h.needs_you) + '</div>' : '') +
+      '<div class="dact"><button data-act="copy" data-prompt="' + esc(continuePrompt(it)) + '">复制「接着做」提示词</button></div></div>'
+      : '<div class="handoff">还没有交接卡。先做第 1 步：在台式机开会话，贴启动提示词。</div>';
+  }
+  html += kv('是什么', it.summary) + kv('为什么值得做', it.why) + kv('在哪', it.where) + kv('要花多少', it.effort) + kv('做到什么算完', it.done_when) + kv('先等', it.wait);
+  html += '<div class="kv"><b>步骤</b></div><ol class="steps">' + it.steps.map((s, i) => {
+    const links = (s.links || []).map(l => '<a href="' + esc(l.u) + '" target="_blank" rel="noopener">' + esc(l.t) + '</a>').join('');
+    return '<li class="' + (d.has(i) ? 'done' : '') + '"><label><input type="checkbox" data-step="' + i + '"' + (d.has(i) ? ' checked' : '') + '>' + esc(s.t) + '</label>' +
+      (s.d ? '<div class="d">' + esc(s.d) + '</div>' : '') +
+      '<div class="x">' + (s.min ? '<span>约 ' + s.min + ' 分钟</span>' : '') +
+      (readyFile(it, i) ? readyLink(readyFile(it, i), '已备好，点开看') : (s.delegate ? '<span>Hermes 会替你备好</span>' : '')) + links +
+      (s.prompt ? '<button class="ghost" data-act="copy" data-prompt="' + esc(s.prompt) + '">复制提示词</button>' : '') + '</div></li>';
+  }).join('') + '</ol>';
+  const moves = [];
+  if (st !== 'running') moves.push('<button data-act="promote" data-to="running">升级成在跑</button>');
+  if (st === 'pool' || st === 'frozen') moves.push('<button data-act="promote" data-to="explore">移到探索</button>');
+  if (st !== 'frozen') moves.push('<button class="ghost" data-act="promote" data-to="frozen">冻结</button>');
+  if (st !== it.status) moves.push('<button class="ghost" data-act="promote" data-to="' + esc(it.status) + '">恢复原状态</button>');
+  html += '<div class="dact">' + moves.join('') + '</div>';
+  const dr = $('#drawer');
+  dr.innerHTML = html;
+  dr.dataset.item = id;
+}
+
+function openDrawer(id) { openId = id; renderDrawer(id); $('#drawer').classList.add('on'); $('#veil').classList.add('on'); }
+function closeDrawer() { openId = null; $('#drawer').classList.remove('on'); $('#veil').classList.remove('on'); }
+
+let toastTimer = null;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 2200); }
+
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); }
+  catch (e) {
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); ta.remove();
+  }
+}
+
+function spark(fromEl, toEl) {
+  const a = fromEl.getBoundingClientRect(), b = (toEl || fromEl).getBoundingClientRect();
+  const s = document.createElement('div'); s.className = 'spark';
+  s.style.left = (a.left + a.width / 2) + 'px'; s.style.top = (a.top + a.height / 2) + 'px';
+  s.style.setProperty('--dx', (b.left + 40 - a.left - a.width / 2) + 'px');
+  s.style.setProperty('--dy', (Math.min(b.top, innerHeight - 40) - a.top) + 'px');
+  document.body.appendChild(s); setTimeout(() => s.remove(), 1200);
+}
+
+function cardEnter(kind, burst) {
+  const nc = document.querySelector('.card[data-kind="' + kind + '"]');
+  if (!nc) return;
+  nc.classList.add('entering');
+  if (burst) nc.insertAdjacentHTML('beforeend', '<span class="burst">✓</span>');
+}
+
+document.addEventListener('click', async e => {
+  const b = e.target.closest('button[data-act]');
+  if (!b) { const row = e.target.closest('[data-open]'); if (row) openDrawer(row.dataset.open); if (e.target.id === 'veil') closeDrawer(); return; }
+  const act = b.dataset.act, card = b.closest('.card');
+  try {
+    if (act === 'copy') { await copyText(b.dataset.prompt); toast('已复制，去会话里粘贴就行'); }
+    else if (act === 'retry') load();
+    else if (act === 'open') openDrawer(card.dataset.item);
+    else if (act === 'close') closeDrawer();
+    else if (act === 'sugg-ok' || act === 'sugg-no') {
+      await post({type: act === 'sugg-ok' ? 'suggest_ok' : 'suggest_no', suggestion: b.dataset.id});
+      render(); toast('记下了');
+    } else if (act === 'done') {
+      card.classList.add('leaving');
+      await post({type: 'done', item: card.dataset.item, step: Number(card.dataset.step)});
+      setTimeout(() => { render(); cardEnter(card.dataset.kind, true); toast('做完一步，下一步亮起来了'); }, 300);
+    } else if (act === 'shift') {
+      const s = getShifts(); s[card.dataset.kind] = (s[card.dataset.kind] || 0) + 1; setShifts(s);
+      post({type: 'skip', item: card.dataset.item, kind: card.dataset.kind, step: card.dataset.step === '' ? null : Number(card.dataset.step)}).catch(() => {});
+      card.classList.add('leaving');
+      setTimeout(async () => { await load(); cardEnter(card.dataset.kind, false); }, 250);
+    } else if (act === 'promote') {
+      const id = $('#drawer').dataset.item;
+      await post({type: 'promote', item: id, to: b.dataset.to});
+      render(); toast('已改成：' + (STATUS_NAME[b.dataset.to] || b.dataset.to));
+    } else if (act === 'drop') {
+      await post({type: 'idea_drop', idea_id: b.dataset.idea}); render(); toast('删掉了');
+    } else if (act === 'note') {
+      noteOpen = b.closest('.idea').dataset.idea; render();
+      const inp = document.querySelector('.noteform .f-step'); if (inp) inp.focus();
+    } else if (act === 'note-cancel') { noteOpen = null; render(); }
+    else if (act === 'note-save') {
+      const box = b.closest('.idea'), id = box.dataset.idea;
+      const text = box.querySelector('.f-text').value.trim(), step = box.querySelector('.f-step').value.trim();
+      const belongs = box.querySelector('.noteform select').value;
+      if (!text) { box.querySelector('.noteform .err').hidden = false; box.querySelector('.f-text').focus(); return; }
+      const idea = SNAP.state.ideas.find(i => i.id === id), n = idea && idea.note;
+      let changed = false;
+      if (idea && text !== idea.text) { await post({type: 'idea_edit', idea_id: id, text}); changed = true; }
+      // The note is only written when the home or the first step differs from what the form opened with.
+      if (belongs !== (n ? n.belongs : '新的一件') || step !== (n ? n.first_step : '')) {
+        await post({type: 'idea_note', idea_id: id, belongs, first_step: step}); changed = true;
+      }
+      noteOpen = null; render(); toast(changed ? '改好了' : '没有改动');
+    }
+  } catch (err) { toast('没成功：' + err.message); load(); }
+});
+
+document.addEventListener('change', async e => {
+  const box = e.target.closest('#drawer input[data-step]');
+  if (!box) return;
+  const id = $('#drawer').dataset.item;
+  try {
+    await post({type: box.checked ? 'done' : 'undo', item: id, step: Number(box.dataset.step)});
+    render(); if (box.checked) toast('做完一步');
+  } catch (err) { toast('没成功：' + err.message); load(); }
+});
+
+$('#ideaForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const input = $('#ideaInput'), text = input.value.trim();
+  if (!text) { input.focus(); return; }
+  try {
+    await post({type: 'idea', text});
+    spark(input, $('#myIdeas'));
+    input.value = ''; render(); toast('记下了，在想法池里');
+  } catch (err) { toast('没记上：' + err.message); }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && openId) closeDrawer();
+  else if (e.key === 'Escape' && noteOpen) { noteOpen = null; render(); }
+  if (e.key === 'Enter' && e.target.closest('.noteform input')) { e.preventDefault(); e.target.closest('.noteform').querySelector('[data-act="note-save"]').click(); }
+  if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) { e.preventDefault(); $('#ideaInput').focus(); }
+});
+$('#veil').addEventListener('click', closeDrawer);
+
+let lastVersion = '';
+async function pollVersion() {
+  if (document.hidden || openId || noteOpen) return;
+  try {
+    const res = await fetch('/api/version');
+    if (!res.ok) return;
+    const {v} = await res.json();
+    if (lastVersion && v !== lastVersion) load();
+    lastVersion = v;
+  } catch (e) {}
+}
+setInterval(pollVersion, 3000);
+
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !openId && !noteOpen) load(); });
+setInterval(() => { if (!document.hidden && !openId && !noteOpen) load(); }, 60000);
+load();
+
+(function sky() {
+  const c = $('#sky'), x = c.getContext('2d');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let w = 0, h = 0, stars = [], last = 0;
+  function size() {
+    const r = devicePixelRatio || 1;
+    w = c.width = innerWidth * r; h = c.height = innerHeight * r;
+    c.style.width = innerWidth + 'px'; c.style.height = innerHeight + 'px';
+    const n = Math.round(innerWidth * innerHeight / 8000);
+    stars = Array.from({length: n}, () => ({x: Math.random() * w, y: Math.random() * h, r: (Math.random() * 1.1 + 0.3) * r, p: Math.random() * 6.28, s: 0.3 + Math.random() * 0.7}));
+  }
+  function draw(t) {
+    x.clearRect(0, 0, w, h);
+    const g = x.createRadialGradient(w * 0.82, h * 0.08, 0, w * 0.82, h * 0.08, Math.max(w, h) * 0.75);
+    g.addColorStop(0, 'rgba(126,110,255,0.13)'); g.addColorStop(0.5, 'rgba(60,90,200,0.05)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    x.fillStyle = '#e3e9ff';
+    for (const s of stars) {
+      x.globalAlpha = reduce ? 0.6 : 0.25 + 0.55 * Math.pow(Math.sin(t / 1000 * s.s + s.p), 2);
+      x.beginPath(); x.arc(s.x, s.y, s.r, 0, 6.283); x.fill();
+    }
+    x.globalAlpha = 1;
+  }
+  function loop(t) { if (!document.hidden && t - last > 70) { draw(t); last = t; } requestAnimationFrame(loop); }
+  addEventListener('resize', () => { size(); draw(performance.now()); });
+  size(); draw(0);
+  if (!reduce) requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

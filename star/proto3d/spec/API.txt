@@ -1,0 +1,27 @@
+【三份现成代码的接口说明】
+它们的全文由我在拼页面时原样内联在你的代码之前（你不用读、不用抄、不要改），你的代码里可以直接使用，但不要重复声明下面列出的名字。
+
+一、DATA（全局常量，数据）
+- DATA.domains：[{ id, name, color }]，6 个领域（self / ai / edu / industry / social / create）；DATA.unsortedColor：还没归类的想法的颜色；DATA.legendNote：图例旁一行小字。
+- DATA.icons：{ 图标名: 'SVG path 字符串' }，19 个，24x24 坐标系的线条图标：用 new Path2D(d) 画，平移缩放到球心（size/24），只描边不填充，描边 1.8 左右。
+- DATA.lensIcons：{ 线索种类文字: 图标名 }，例如 '可以变成': 'spark'。
+- DATA.constellations：4 个星座 [{ id, domain, status('running'|'explore'|'pool'|'frozen'), icon, incIcons[], title, at, includes[] }]。includes 是成员的文字，incIcons 是同下标成员的图标名，domain 对应 DATA.domains 的 id，at 是 2D 坐标（3D 不用）。
+- DATA.ideas：[{ id, text, icon, at }]，初始想法（目前 1 条：boardgame）；DATA.phoneDemo：{ id, text, icon, tag, at }，可选的一条「手机里的想法」示例，可以不用。
+- DATA.links：[{ a, b, kind('confirmed'|'suggest'), label }]，已有的提议线（suggest 画虚线并带问句 label）；DATA.hints：[{ a, b, kind, label }]，拖近两个球时才浮出的线索（可以不用）。a、b 都是节点 id。
+- DATA.expansions：{ 节点id: [{ id, lens, text }] }，长出的可能性示例；DATA.placeholder：[{ lens, text }] 共 3 条，新想法没有专门内容时用；DATA.sparkPlaceholder / DATA.sparkLens：火花开出的「两者之间」圈的文字和种类；DATA.sparks：{ 'a|b': 文字 }；DATA.hint：左上角操作提示的一整句（可以删减后使用）；DATA.badge：不用。
+- 节点 id 规则：星座中心 'item:' + 星座id；成员 'inc:' + 星座id + ':' + 下标；想法 'idea:' + id（打字新建的是 'idea:typed-' + 序号，序号从 1 起）；可能性 'poss:' + 展开项的 id。
+- 线的种类：星座中心—成员（struct）；DATA.links 里的线（confirmed / suggest）；想法或星座中心—它的可能性（poss）；被点一下留下的可能性（kept）。
+
+二、声音（全局函数）
+ensureAudio()（第一次点击或按键时调用）；creak(t, scale)（拉皮筋，t 是张力 0 到 1，scale 传 1）；twang(t, launch)（松手，launch 为真时再带一声嗖）；whoosh()；swishSound()；sliceSound()；setMuted(bool)；audioLog 是数组（测试用，别改它）。
+已占用、不能再声明的全局名字：SOUND, audioCtx, masterGain, noiseBuffer, muted, lastCreakAt, audioLog, ensureAudio, logAudio, canPlaySound, creak, twang, whoosh, swishSound, sliceSound, setMuted, DATA, createForcesPanel。
+
+三、布局力面板 createForcesPanel(opts)（全局函数）
+const panel = createForcesPanel({
+  mode: '3d', presets: PRESETS, initial: { center, repel, link, distance }, initialMode: 'gemini' 或 'claude', modelReady: false,
+  getStats: function () { return { nodes, links, ideas, labelOverlaps, fits, nearestMin, constellations: [{ id, title, members, ideas, status }] }; },
+  onChange: function (values) { ... },       // 数值每变一次就调用一次：拖滑块、预设过渡的每一帧、DeepSeek 重排；values 是 { center, repel, link, distance }，都在 0 到 1
+  applyAnchors: function (list) { ... }       // list 是 [{ id: 'item:xxx', x, y, z }]，x、y、z 都在 -1 到 1
+});
+返回 { setValues(v, animate), getValues(), mode(), setMode(m), open(), close(), isOpen(), setModelReady(b), rearrange(), setWhy(text) }。
+它自己建 DOM 和样式，并把齿轮按钮放进页面里 id 为 top-right 的容器（这个容器必须存在，放在右上角；版本名也放在里面。若有 id 为 mute 的元素，齿轮会插在它前面）。它用到的 id：forces-btn、forces-panel。

@@ -1,0 +1,189 @@
+{
+ "created_at": "2026-11-09T17:00:21+08:00",
+ "window": [
+  "2026-11-10",
+  "2026-11-24"
+ ],
+ "salt": "6e6fedfd71a415214ad83c2307153594",
+ "new_unit_rule": "push if sha256(salt + unit_id) first byte is even",
+ "primary_outcome": "completed inside the window (Horizon done/completed_at; home 'done' event not undone)",
+ "success_rule": "push completion rate >= 2x control AND the 95% CI of the difference excludes 0 (Newcombe); Fisher exact test reported",
+ "units": [
+  {
+   "unit": "home:ai-learning:0",
+   "stratum": "home",
+   "title": "AI 原生的学习与研究方式 → 读科学家用 Claude 的案例",
+   "due": null,
+   "created": "2026-11-06",
+   "group": "control"
+  },
+  {
+   "unit": "home:content:0",
+   "stratum": "home",
+   "title": "内容创作：先蒸馏出你的风格，再做浮萍生活 vlog → 蒸馏出你自己的风格",
+   "due": null,
+   "created": "2026-11-06",
+   "group": "control"
+  },
+  {
+   "unit": "home:harmonyos:0",
+   "stratum": "home",
+   "title": "鸿蒙上跑大模型 → 查官方开放了什么",
+   "due": null,
+   "created": "2026-11-06",
+   "group": "push"
+  },
+  {
+   "unit": "home:harness:0",
+   "stratum": "home",
+   "title": "我的 Harness：提示词、Skill、专家团怎么配 → 先把分层画清楚",
+   "due": null,
+   "created": "2026-11-06",
+   "group": "push"
+  },
+  {
+   "unit": "home:land-lease:0",
+   "stratum": "home",
+   "title": "土地租赁合同重做（顺带沉淀方法论） → 在台式机 clone 代码、移入练习集",
+   "due": null,
+   "created": "2026-11-06",
+   "group": "push"
+  },
+  {
+   "unit": "home:lyrics:0",
+   "stratum": "home",
+   "title": "演唱会歌词同步器 → 在台式机开这个项目的会话，贴启动提示词",
+   "due": null,
+   "created": "2026-11-06",
+   "group": "push"
+  },
+  {
+   "unit": "home:machinery:0",
+   "stratum": "home",
+   "title": "中东工程机械：旋挖 Agent + 服务调度（平台以后） → 在台式机 clone 代码，贴启动提示词",
+   "due": null,
+   "created": "2026-11-06",
+   "group": "control"
+  },
+  {
+   "unit": "home:math-fun:0",
+   "stratum": "home",
+   "title": "数学里有趣的点 → 3Blue1Brown《线性代数的本质》第 1 集",
+   "due": null,
+   "created": "2026-11-06",
+   "group": "push"
+  },
+  {
+   "unit": "home:personal-os:0",
+   "stratum": "home",
+   "title": "个人工作台：今天、待办、想法只要一个来源 → 这一周「今天」只看首页",
+   "due": null,
+   "created": "2026-11-06",
+   "group": "control"
+  },
+  {
+   "unit": "home:school:0",
+   "stratum": "home",
+   "title": "中东学校：ESP32 科学实验台 + 一键备课 → 在台式机开会话，贴启动提示词",
+   "due": null,
+   "created": "2026-11-06",
+   "group": "control"
+  },
+  {
+   "unit": "home:transformer:0",
+   "stratum": "home",
+   "title": "搞懂 Transformer：读论文、手搓一个、和人脑对照 → 先看图解，不碰公式",
+   "due": null,
+   "created": "2026-11-06",
+   "group": "push"
+  },
+  {
+   "unit": "hz:0f5d415d34e9",
+   "stratum": "horizon",
+   "title": "调研 Cua 开源 agent 能不能直接用",
+   "due": null,
+   "created": "2026-11-04 14:26:30",
+   "group": "control"
+  },
+  {
+   "unit": "hz:19993e47aab4",
+   "stratum": "horizon",
+   "title": "弹队长的歌《碎碎念》＋看看其他歌能不能弹",
+   "due": "2026-11-06",
+   "created": "2026-11-05 18:59:01",
+   "group": "push"
+  },
+  {
+   "unit": "hz:34b4c453c675",
+   "stratum": "horizon",
+   "title": "准备 Q4 复盘会",
+   "due": null,
+   "created": "2026-11-03 21:00:46",
+   "group": "push"
+  },
+  {
+   "unit": "hz:42b3b521bfc5",
+   "stratum": "horizon",
+   "title": "调研 Comma（AFK-surf 开源个人 Agent）能否直接用",
+   "due": null,
+   "created": "2026-11-04 01:41:01",
+   "group": "push"
+  },
+  {
+   "unit": "hz:44274ae509a5",
+   "stratum": "horizon",
+   "title": "整理雪包（滑雪装备）并寄出",
+   "due": "2026-11-08",
+   "created": "2026-11-03 23:04:46",
+   "group": "control"
+  },
+  {
+   "unit": "hz:65071d2cc08e",
+   "stratum": "horizon",
+   "title": "练《爱不单行》吉他伴奏：先刷弹不顺的段落，再弹半首",
+   "due": "2026-11-08",
+   "created": "2026-11-07 14:54:40",
+   "group": "control"
+  },
+  {
+   "unit": "hz:a095084023bb",
+   "stratum": "horizon",
+   "title": "看 Agent 2L 的原理（名称待确认）",
+   "due": "2026-11-06",
+   "created": "2026-11-05 19:37:05",
+   "group": "push"
+  },
+  {
+   "unit": "hz:a6d9c85aedcc",
+   "stratum": "horizon",
+   "title": "研究阿里×浙大 Astar 工业级 AI 自进化模型，并理清它与 Agent RL 的关系",
+   "due": null,
+   "created": "2026-11-07 20:07:03",
+   "group": "push"
+  },
+  {
+   "unit": "hz:b0102a3c106a",
+   "stratum": "horizon",
+   "title": "问牛师傅什么时候方便弹给他听（需要他点评）",
+   "due": null,
+   "created": "2026-11-08 04:22:00",
+   "group": "control"
+  },
+  {
+   "unit": "hz:b3e599fe96be",
+   "stratum": "horizon",
+   "title": "问一下崔哥的事",
+   "due": "2026-11-04",
+   "created": "2026-11-03 22:38:34",
+   "group": "push"
+  },
+  {
+   "unit": "hz:bdc67fab5a69",
+   "stratum": "horizon",
+   "title": "跟进 Karpathy 现状：Eureka Labs / autoresearch（AI 自动化实验）",
+   "due": "2026-11-08",
+   "created": "2026-11-08 16:33:48",
+   "group": "control"
+  }
+ ]
+}

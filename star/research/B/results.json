@@ -1,0 +1,135 @@
+{
+ "judges": {
+  "claude": {
+   "calibration_accuracy": 1.0,
+   "missing": 0,
+   "used": true
+  },
+  "deepseek": {
+   "calibration_accuracy": 0.8888888888888888,
+   "missing": 0,
+   "used": true
+  },
+  "gemini": {
+   "calibration_accuracy": 1.0,
+   "missing": 0,
+   "used": true
+  }
+ },
+ "fleiss_kappa": 0.4825013279966399,
+ "gold_trusted": false,
+ "qualified": [
+  "claude",
+  "deepseek",
+  "gemini"
+ ],
+ "disputed": 5,
+ "results": {
+  "M0": {
+   "threshold": 0.0806,
+   "test_pos": 9,
+   "test_neg": 12,
+   "recall3": 0.2222222222222222,
+   "recall3_ci": [
+    0.0632237623122272,
+    0.5474166563271946
+   ],
+   "recall3_ungated": 0.5555555555555556,
+   "false_alarm": 0.4166666666666667,
+   "false_alarm_ci": [
+    0.19325746190524656,
+    0.6804926643446271
+   ],
+   "pass": false
+  },
+  "M1": {
+   "threshold": 74.8548,
+   "test_pos": 9,
+   "test_neg": 12,
+   "recall3": 0.1111111111111111,
+   "recall3_ci": [
+    0.019890371327130518,
+    0.4350062147680602
+   ],
+   "recall3_ungated": 0.3333333333333333,
+   "false_alarm": 0.25,
+   "false_alarm_ci": [
+    0.08894003962896137,
+    0.53231033912066
+   ],
+   "pass": false,
+   "mcnemar_vs_M0": {
+    "better": 1,
+    "worse": 2,
+    "p": 1.0
+   }
+  },
+  "M2": {
+   "threshold": 0.6429,
+   "test_pos": 9,
+   "test_neg": 12,
+   "recall3": 0.5555555555555556,
+   "recall3_ci": [
+    0.26664734574402965,
+    0.8112245705280859
+   ],
+   "recall3_ungated": 0.7777777777777778,
+   "false_alarm": 0.5,
+   "false_alarm_ci": [
+    0.2537781703934222,
+    0.7462218296065778
+   ],
+   "pass": false,
+   "mcnemar_vs_M0": {
+    "better": 3,
+    "worse": 0,
+    "p": 0.25
+   }
+  },
+  "M3": {
+   "threshold": 0.0328,
+   "test_pos": 9,
+   "test_neg": 12,
+   "recall3": 0.0,
+   "recall3_ci": [
+    0.0,
+    0.2991527535509594
+   ],
+   "recall3_ungated": 0.6666666666666666,
+   "false_alarm": 0.08333333333333333,
+   "false_alarm_ci": [
+    0.014864709450773488,
+    0.35388592179859524
+   ],
+   "pass": false,
+   "mcnemar_vs_M0": {
+    "better": 0,
+    "worse": 2,
+    "p": 0.5
+   }
+  },
+  "M4": {
+   "threshold": 0.0492,
+   "test_pos": 9,
+   "test_neg": 12,
+   "recall3": 0.0,
+   "recall3_ci": [
+    0.0,
+    0.2991527535509594
+   ],
+   "recall3_ungated": 0.5555555555555556,
+   "false_alarm": 0.08333333333333333,
+   "false_alarm_ci": [
+    0.014864709450773488,
+    0.35388592179859524
+   ],
+   "pass": false,
+   "mcnemar_vs_M0": {
+    "better": 0,
+    "worse": 2,
+    "p": 0.5
+   }
+  }
+ },
+ "chosen": null
+}
